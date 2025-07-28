@@ -1,0 +1,77 @@
+[2025-07-25 21:54:56] [error] [User: guest] [IP: 127.0.0.1] Login error: Unknown database 'umuganda_digital'
+[2025-07-25 22:04:25] [error] [User: guest] [IP: 127.0.0.1] Registration error: Column 'date_of_birth' cannot be null
+[2025-07-25 22:04:34] [error] [User: guest] [IP: 127.0.0.1] Registration error: Column 'date_of_birth' cannot be null
+[2025-07-25 22:04:36] [error] [User: guest] [IP: 127.0.0.1] Registration error: Column 'date_of_birth' cannot be null
+[2025-07-25 22:05:40] [error] [User: guest] [IP: unknown] Registration error: Column 'date_of_birth' cannot be null
+[2025-07-25 22:06:17] [error] [User: guest] [IP: unknown] Registration error: Column 'date_of_birth' cannot be null
+[2025-07-25 22:06:38] [error] [User: guest] [IP: unknown] Registration error: Column 'date_of_birth' cannot be null
+[2025-07-25 22:07:05] [info] [User: guest] [IP: unknown] New resident registered: test1753474025@example.com (ID: 3)
+[2025-07-25 22:07:33] [info] [User: guest] [IP: 127.0.0.1] New resident registered: lou@gmail.com (ID: 4)
+[2025-07-25 22:10:51] [info] [User: guest] [IP: 127.0.0.1] New resident registered: were@ewrwe.wer (ID: 5)
+[2025-07-26 10:25:52] [info] [User: guest] [IP: unknown] New resident registered: john1753518351@test.com (ID: 6)
+[2025-07-26 10:28:05] [info] [User: guest] [IP: 127.0.0.1] New resident registered: loutt@gmail.com (ID: 7)
+[2025-07-26 10:28:23] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 10:28:46] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: louangekeddy@gmail.com
+[2025-07-26 10:29:30] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: lou@gmail.com
+[2025-07-26 10:29:37] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 10:31:20] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 10:42:58] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: wswqw@eerw.com
+[2025-07-26 10:44:48] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: wswqw@eerw.com
+[2025-07-26 10:44:53] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: wswqw@eerw.com
+[2025-07-26 10:45:57] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: qwewe@ewe.er
+[2025-07-26 10:46:20] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: qwewe@ewe.er
+[2025-07-26 10:46:28] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: louangekeddy@gmail.com
+[2025-07-26 10:49:19] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: louangekeddy@gmail.com
+[2025-07-26 10:49:34] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: louangekeddy@gmail.com
+[2025-07-26 10:49:44] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: admin@gmail.com
+[2025-07-26 11:00:53] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 11:05:41] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 11:18:21] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 11:18:30] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 11:18:38] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 11:37:53] [info] [User: 1] [IP: unknown] User logged in: admin@umuganda-digital.rw
+[2025-07-26 11:42:37] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 11:43:19] [info] [User: guest] [IP: 127.0.0.1] User logged out: lou@gmail.com
+[2025-07-26 11:43:28] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 11:48:55] [info] [User: guest] [IP: 127.0.0.1] User logged out: lou@gmail.com
+[2025-07-26 11:49:54] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 13:26:36] [info] [User: guest] [IP: 127.0.0.1] User logged out: lou@gmail.com
+[2025-07-26 13:27:10] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-26 13:30:58] [info] [User: guest] [IP: 127.0.0.1] User logged out: lou@gmail.com
+[2025-07-26 13:31:05] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-27 15:40:20] [info] [User: 4] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-27 15:42:49] [info] [User: guest] [IP: 127.0.0.1] User logged out: lou@gmail.com
+[2025-07-27 15:43:56] [info] [User: guest] [IP: 127.0.0.1] New resident registered: resident@user.com (ID: 8)
+[2025-07-27 15:44:25] [info] [User: 8] [IP: 127.0.0.1] User logged in: resident@user.com
+[2025-07-28 14:31:35] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: lou@gmail.com
+[2025-07-28 14:32:11] [info] [User: guest] [IP: 127.0.0.1] New resident registered: lou@gmail.com (ID: 85)
+[2025-07-28 14:32:23] [info] [User: 85] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-28 14:33:18] [info] [User: guest] [IP: 127.0.0.1] User logged out: lou@gmail.com
+[2025-07-28 14:34:59] [info] [User: 85] [IP: 127.0.0.1] User logged in: lou@gmail.com
+[2025-07-28 18:22:48] [info] [User: guest] [IP: 127.0.0.1] User logged out: lou@gmail.com
+[2025-07-28 18:23:01] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: g.uwimana@test.rw
+[2025-07-28 18:23:17] [info] [User: 69] [IP: 127.0.0.1] User logged in: g.uwimana@test.rw
+[2025-07-28 19:00:30] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: eric@example.com
+[2025-07-28 19:00:38] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: eric@example.com
+[2025-07-28 19:01:09] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: eric@example.com
+[2025-07-28 19:01:21] [info] [User: 3] [IP: 127.0.0.1] User logged in: eric@example.com
+[2025-07-28 19:36:34] [info] [User: guest] [IP: 127.0.0.1] User logged out: eric@example.com
+[2025-07-28 19:36:55] [info] [User: 5] [IP: 127.0.0.1] User logged in: david@example.com
+[2025-07-28 19:40:23] [info] [User: guest] [IP: 127.0.0.1] User logged out: david@example.com
+[2025-07-28 19:40:35] [info] [User: 7] [IP: 127.0.0.1] User logged in: patrick@example.com
+[2025-07-28 19:42:52] [info] [User: guest] [IP: 127.0.0.1] User logged out: patrick@example.com
+[2025-07-28 19:44:36] [info] [User: 11] [IP: 127.0.0.1] User logged in: peter@example.com
+[2025-07-28 19:45:45] [info] [User: guest] [IP: 127.0.0.1] User logged out: peter@example.com
+[2025-07-28 19:46:57] [info] [User: 3] [IP: 127.0.0.1] User logged in: eric@example.com
+[2025-07-28 20:17:57] [info] [User: guest] [IP: 127.0.0.1] User logged out: eric@example.com
+[2025-07-28 20:18:08] [info] [User: 7] [IP: 127.0.0.1] User logged in: patrick@example.com
+[2025-07-28 20:24:30] [info] [User: guest] [IP: 127.0.0.1] User logged out: patrick@example.com
+[2025-07-28 20:24:48] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com
+[2025-07-28 21:01:43] [info] [User: guest] [IP: 127.0.0.1] User logged out: grace@example.com
+[2025-07-28 21:01:53] [info] [User: 3] [IP: 127.0.0.1] User logged in: eric@example.com
+[2025-07-28 21:02:29] [info] [User: guest] [IP: 127.0.0.1] User logged out: eric@example.com
+[2025-07-28 21:02:37] [info] [User: 7] [IP: 127.0.0.1] User logged in: patrick@example.com
+[2025-07-28 21:03:02] [info] [User: guest] [IP: 127.0.0.1] User logged out: patrick@example.com
+[2025-07-28 21:03:10] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com
+[2025-07-28 22:32:00] [info] [User: 6] [IP: 127.0.0.1] User changed password
+[2025-07-28 22:32:19] [info] [User: 6] [IP: 127.0.0.1] User updated preferences

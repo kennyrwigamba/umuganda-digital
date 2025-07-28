@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Test</title>
+</head>
+
+<body>
+    <h1>Payment Processing Test</h1>
+    <p>This is a simple test page to verify payment functionality.</p>
+
+    <script>
+        // Test payment processing
+        async function testPayment() {
+            const testData = {
+                fine_id: 1,
+                payment_method: 'mobile_money',
+                phone_number: '0788123456'
+            };
+
+            try {
+                const response = await fetch('process_payment.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.json();
+                console.log('Payment result:', result);
+
+                if (result.success) {
+                    document.body.innerHTML += `<p style="color: green;">Payment successful! Reference: ${result.payment_reference}</p>`;
+                } else {
+                    document.body.innerHTML += `<p style="color: red;">Payment failed: ${result.message}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.body.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Note: This test requires a valid session and existing fine to work
+        console.log('Payment test page loaded. Run testPayment() in console to test (requires valid session).');
+    </script>
+</body>
+
+</html>
