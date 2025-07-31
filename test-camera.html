@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Permission Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎥 Camera Permission Test</h1>
+        <p>This page tests camera access for the QR scanner functionality.</p>
+
+        <div class="test-section info">
+            <h3>🔍 Browser Compatibility Check</h3>
+            <div id="compatibilityResult">Testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📷 Camera Access Test</h3>
+            <button onclick="testCameraAccess()" id="testBtn">Test Camera Access</button>
+            <button onclick="stopCamera()" id="stopBtn" disabled>Stop Camera</button>
+            <div id="cameraResult" style="margin-top: 15px;"></div>
+            <video id="video" style="display: none; margin-top: 15px;" autoplay playsinline></video>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 QR Scanner Library Test</h3>
+            <button onclick="testQRLibrary()" id="qrTestBtn">Test QR Library</button>
+            <div id="qrResult" style="margin-top: 15px;"></div>
+            <div id="qrReader"
+                style="width: 300px; height: 250px; border: 2px dashed #ccc; margin-top: 15px; display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Troubleshooting Tips</h3>
+            <ul>
+                <li><strong>Chrome/Edge:</strong> Make sure you're on HTTPS or localhost</li>
+                <li><strong>Firefox:</strong> Go to Settings → Privacy & Security → Permissions → Camera</li>
+                <li><strong>Safari:</strong> Safari → Preferences → Websites → Camera</li>
+                <li><strong>Mobile:</strong> Check browser permissions in device settings</li>
+                <li><strong>Corporate Networks:</strong> Camera access might be blocked by policy</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Include QR Code Library -->
+    <script src="public/assets/js/html5-qrcode.min.js"></script>
+
+    <script>
+        let stream = null;
+        let qrScanner = null;
+
+        // Check browser compatibility
+        function checkCompatibility() {
+            const result = document.getElementById('compatibilityResult');
+            let issues = [];
+
+            if (!navigator.mediaDevices) {
+                issues.push('❌ MediaDevices API not supported');
+            }
+
+            if (!navigator.mediaDevices.getUserMedia) {
+                issues.push('❌ getUserMedia not supported');
+            }
+
+            if (typeof Html5QrcodeScanner === 'undefined') {
+                issues.push('❌ QR Scanner library not loaded');
+            }
+
+            if (issues.length === 0) {
+                result.innerHTML = '<div class="success">✅ All required APIs are supported!</div>';
+            } else {
+                result.innerHTML = '<div class="error">' + issues.join('<br>') + '</div>';
+            }
+        }
+
+        // Test camera access
+        async function testCameraAccess() {
+            const resultDiv = document.getElementById('cameraResult');
+            const video = document.getElementById('video');
+            const testBtn = document.getElementById('testBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            resultDiv.innerHTML = '<div class="info">🔄 Requesting camera access...</div>';
+            testBtn.disabled = true;
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+
+                video.srcObject = stream;
+                video.style.display = 'block';
+                resultDiv.innerHTML = '<div class="success">✅ Camera access granted! Video stream active.</div>';
+                stopBtn.disabled = false;
+
+            } catch (error) {
+                console.error('Camera access error:', error);
+
+                let errorMessage = '❌ Camera access failed: ';
+                switch (error.name) {
+                    case 'NotAllowedError':
+                        errorMessage += 'Permission denied. Please allow camera access in your browser.';
+                        break;
+                    case 'NotFoundError':
+                        errorMessage += 'No camera found on this device.';
+                        break;
+                    case 'NotReadableError':
+                        errorMessage += 'Camera is already in use by another application.';
+                        break;
+                    case 'OverconstrainedError':
+                        errorMessage += 'Camera constraints cannot be satisfied.';
+                        break;
+                    case 'SecurityError':
+                        errorMessage += 'Security error. Make sure you\'re on HTTPS or localhost.';
+                        break;
+                    default:
+                        errorMessage += error.message || 'Unknown error occurred.';
+                }
+
+                resultDiv.innerHTML = '<div class="error">' + errorMessage + '</div>';
+                testBtn.disabled = false;
+            }
+        }
+
+        // Stop camera
+        function stopCamera() {
+            const video = document.getElementById('video');
+            const resultDiv = document.getElementById('cameraResult');
+            const testBtn = document.getElementById('testBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
+            video.style.display = 'none';
+            video.srcObject = null;
+            resultDiv.innerHTML = '<div class="info">📷 Camera stopped.</div>';
+            testBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        // Test QR Scanner Library
+        function testQRLibrary() {
+            const resultDiv = document.getElementById('qrResult');
+            const qrReaderDiv = document.getElementById('qrReader');
+            const qrTestBtn = document.getElementById('qrTestBtn');
+
+            if (typeof Html5QrcodeScanner === 'undefined') {
+                resultDiv.innerHTML = '<div class="error">❌ QR Scanner library not loaded. Check if html5-qrcode.min.js is accessible.</div>';
+                return;
+            }
+
+            try {
+                qrReaderDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div class="info">🔄 Initializing QR scanner...</div>';
+                qrTestBtn.disabled = true;
+
+                qrScanner = new Html5QrcodeScanner("qrReader", {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                });
+
+                qrScanner.render(
+                    (decodedText) => {
+                        resultDiv.innerHTML = '<div class="success">✅ QR Scanner working! Scanned: ' + decodedText + '</div>';
+                        qrScanner.stop();
+                        qrTestBtn.disabled = false;
+                    },
+                    (error) => {
+                        // Ignore scan failures, they're normal
+                    }
+                );
+
+                resultDiv.innerHTML = '<div class="success">✅ QR Scanner initialized successfully! Try scanning a QR code.</div>';
+
+            } catch (error) {
+                console.error('QR Scanner error:', error);
+                resultDiv.innerHTML = '<div class="error">❌ QR Scanner failed: ' + error.message + '</div>';
+                qrTestBtn.disabled = false;
+            }
+        }
+
+        // Initialize compatibility check on page load
+        document.addEventListener('DOMContentLoaded', checkCompatibility);
+    </script>
+</body>
+
+</html>

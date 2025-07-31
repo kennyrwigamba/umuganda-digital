@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 QR Attendance System Test</h1>
+
+    <div class="test-section">
+        <h3>Test QR Code Data Formats</h3>
+        <p>This page tests the QR code scanning functionality without requiring a camera.</p>
+
+        <button class="btn-primary" onclick="testNewQRFormat()">Test New JSON QR Format</button>
+        <button class="btn-primary" onclick="testOldQRFormat()">Test Old Plain ID Format</button>
+        <button class="btn-success" onclick="testAPI()">Test API Direct</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        // Simulate the onScanSuccess function from attendance-marking.php
+        function simulateQRScan(qrData) {
+            let userId, userName;
+
+            try {
+                // Try to parse as JSON first (new QR format)
+                const qrDataObj = JSON.parse(qrData);
+
+                if (qrDataObj.type === 'umuganda_resident' && qrDataObj.id) {
+                    userId = qrDataObj.id;
+                    userName = qrDataObj.name;
+
+                    showResult(`✅ JSON QR Format: Found user ${userName} (ID: ${userId})`, 'success');
+                    return { userId, userName, format: 'json' };
+                } else {
+                    showResult('❌ Invalid QR code: Not a resident QR code', 'error');
+                    return null;
+                }
+            } catch (e) {
+                // Fallback: treat as plain user ID (old format)
+                const plainUserId = qrData.trim();
+
+                if (!/^\d+$/.test(plainUserId)) {
+                    showResult('❌ Invalid QR code format. Not a valid user ID.', 'error');
+                    return null;
+                }
+
+                userId = plainUserId;
+                userName = null; // Will be fetched from API
+
+                showResult(`✅ Plain ID Format: Found user ID ${userId}`, 'success');
+                return { userId, userName, format: 'plain' };
+            }
+        }
+
+        function testNewQRFormat() {
+            const testQRData = JSON.stringify({
+                id: 123,
+                type: 'umuganda_resident',
+                name: 'John Doe',
+                cell: 'Kimironko Cell',
+                sector: 'Kimironko Sector',
+                timestamp: new Date().toISOString()
+            });
+
+            showResult(`🧪 Testing JSON QR Data: ${testQRData}`, 'info');
+            setTimeout(() => simulateQRScan(testQRData), 1000);
+        }
+
+        function testOldQRFormat() {
+            const testQRData = "456";
+
+            showResult(`🧪 Testing Plain ID QR Data: ${testQRData}`, 'info');
+            setTimeout(() => simulateQRScan(testQRData), 1000);
+        }
+
+        async function testAPI() {
+            showResult('🧪 Testing QR Attendance API...', 'info');
+
+            try {
+                const response = await fetch('/api/qr-attendance.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 123,
+                        event_id: 1,
+                        status: 'present',
+                        check_in_time: new Date().toTimeString().slice(0, 8),
+                        notes: 'Test scan'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult(`✅ API Test Success: ${data.message}`, 'success');
+                } else {
+                    showResult(`❌ API Test Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ API Test Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = type;
+        }
+    </script>
+</body>
+
+</html>
