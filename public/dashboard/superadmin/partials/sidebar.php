@@ -1,14 +1,15 @@
-<?php 
-function active_link($link = null) {
-    $current_path = $_SERVER['REQUEST_URI'];
+<?php
+    function active_link($link = null)
+    {
+        $current_path = $_SERVER['REQUEST_URI'];
 
-    if ($current_path === '/public/dashboard/admin/'.$link) {
-      return 'text-white font-semibold bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow-md hover:from-primary-700 hover:to-primary-800';
-    } else {
-      return 'text-gray-600 font-medium hover:text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100';
+        if ($current_path === '/public/dashboard/admin/' . $link) {
+            return 'text-white font-semibold bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow-md hover:from-primary-700 hover:to-primary-800';
+        } else {
+            return 'text-gray-600 font-medium hover:text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100';
+        }
+
     }
-    
-}
 
 ?>
 
@@ -41,22 +42,30 @@ function active_link($link = null) {
         <div class="space-y-2">
             <!-- Dashboard -->
             <a href="index.php"
-                class="<?= active_link('index.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('index.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i class="fas fa-tachometer-alt mr-3 text-lg"></i>
                 Dashboard
             </a>
 
             <!-- Residents Management -->
             <a href="manage-residents.php"
-                class="<?= active_link('manage-residents.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('manage-residents.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i
                     class="fas fa-users mr-3 text-lg"></i>
                 Manage Residents
             </a>
 
+            <!-- Admin Assignments -->
+            <a href="admin-assignments.php"
+                class="<?php echo active_link('admin-assignments.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                <i
+                    class="fas fa-user-shield mr-3 text-lg"></i>
+                Admin Assignments
+            </a>
+
             <!-- Attendance -->
             <a href="attendance-tracking.php"
-                class="<?= active_link('attendance-tracking.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('attendance-tracking.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i
                     class="fas fa-clipboard-check mr-3 text-lg"></i>
                 Attendance Tracking
@@ -64,7 +73,7 @@ function active_link($link = null) {
 
             <!-- Fines & Payments -->
             <a href="fines.php"
-                class="<?= active_link('fines.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('fines.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i
                     class="fas fa-money-bill-wave mr-3 text-lg"></i>
                 Fines Management
@@ -72,7 +81,7 @@ function active_link($link = null) {
 
             <!-- Events -->
             <a href="umuganda-events.php"
-                class="<?= active_link('umuganda-events.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('umuganda-events.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i
                     class="fas fa-calendar-alt mr-3 text-lg"></i>
                 Umuganda Events
@@ -80,7 +89,7 @@ function active_link($link = null) {
 
             <!-- Reports -->
             <a href="reports.php"
-                class="<?= active_link('reports.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('reports.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i
                     class="fas fa-chart-bar mr-3 text-lg"></i>
                 Reports & Analytics
@@ -88,7 +97,7 @@ function active_link($link = null) {
 
             <!-- Notices -->
             <a href="notices.php"
-                class="<?= active_link('notices.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('notices.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i
                     class="fas fa-bullhorn mr-3 text-lg"></i>
                 Community Notices
@@ -96,7 +105,7 @@ function active_link($link = null) {
 
             <!-- Settings -->
             <a href="settings.php"
-                class="<?= active_link('settings.php') ?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
+                class="<?php echo active_link('settings.php')?> group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200">
                 <i
                     class="fas fa-cog mr-3 text-lg"></i>
                 Settings
@@ -110,11 +119,11 @@ function active_link($link = null) {
             class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
             <div
                 class="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center shadow-sm">
-                <span class="text-white font-semibold text-sm"><?php echo $initials; ?></span>
+                <span class="text-white font-semibold text-sm">AD</span>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate"><?php echo $firstName; ?></p>
-                <p class="text-xs text-gray-500 truncate">Sector Administrator</p>
+                <p class="text-sm font-medium text-gray-900 truncate">Admin User</p>
+                <p class="text-xs text-gray-500 truncate">System Administrator</p>
             </div>
             <button class="text-gray-400 hover:text-gray-600 transition-colors">
                 <i class="fas fa-sign-out-alt text-lg"></i>

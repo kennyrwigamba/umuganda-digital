@@ -28,7 +28,7 @@
 
     // Get user data
     $userModel = new User();
-    $user      = $userModel->findById($_SESSION['user_id']);
+    $user      = $userModel->findByIdWithLocation($_SESSION['user_id']);
 
     if (! $user) {
         // User not found, logout and redirect
@@ -44,7 +44,7 @@
     $email      = htmlspecialchars($user['email']);
     $phone      = htmlspecialchars($user['phone']);
     $nationalId = htmlspecialchars($user['national_id']);
-    $location   = htmlspecialchars($user['cell'] . ', ' . $user['sector'] . ', ' . $user['district']);
+    $location   = htmlspecialchars($user['cell_name'] . ', ' . $user['sector_name'] . ', ' . $user['district_name']);
     $initials   = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
     // Initialize models
@@ -79,7 +79,7 @@
         ($attendancePercentage >= 70 ? '#16-30' : '#30+'));
 
     // Get next upcoming event
-    $nextEvent = $eventModel->getEventsByUserLocation($user['cell'], $user['sector'], $user['district'], 1);
+    $nextEvent = $eventModel->getEventsByUserLocationIds($user['cell_id'], $user['sector_id'], $user['district_id'], 1);
     $nextEvent = ! empty($nextEvent) ? $nextEvent[0] : null;
 
     // Get recent attendance records
@@ -92,11 +92,11 @@
     $fineStats = $fineModel->getUserFineStats($_SESSION['user_id']);
 
     // Get recent notices
-    $recentNotices = $noticeModel->getRecentNoticesForUser(
+    $recentNotices = $noticeModel->getRecentNoticesForUserByLocationIds(
         $_SESSION['user_id'],
-        $user['cell'],
-        $user['sector'],
-        $user['district'],
+        $user['cell_id'],
+        $user['sector_id'],
+        $user['district_id'],
         $user['role'],
         3
     );
@@ -224,15 +224,15 @@
                                         }
 
                                     ?>
-	                                <span
-	                                    class="bg-success-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-sm flex items-center">
-	                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-	                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-	                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-	                                    </svg>
-	                                    <?php echo $daysLeft; ?> day<?php echo $daysLeft != 1 ? 's' : ''; ?> left
-	                                </span>
-	                                <?php else: ?>
+		                                <span
+		                                    class="bg-success-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-sm flex items-center">
+		                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+		                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+		                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+		                                    </svg>
+		                                    <?php echo $daysLeft; ?> day<?php echo $daysLeft != 1 ? 's' : ''; ?> left
+		                                </span>
+		                                <?php else: ?>
                                 <span
                                     class="bg-gray-500 text-white text-sm font-medium px-4 py-2 rounded-full shadow-sm">
                                     No upcoming events
@@ -248,62 +248,62 @@
                                 $duration      = $startTime->diff($endTime);
                                 $durationHours = $duration->h + ($duration->i / 60);
                             ?>
-	                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-	                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
-	                                <div class="flex items-center mb-2">
-	                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
-	                                        viewBox="0 0 24 24">
-	                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-	                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2 2v12a2 2 0 002 2z">
-	                                        </path>
-	                                    </svg>
-	                                    <p class="text-sm text-gray-600 font-medium">Date</p>
-	                                </div>
-	                                <p class="text-lg font-bold text-gray-800"><?php echo $eventDate->format('l, M j'); ?></p>
-	                                <p class="text-sm text-gray-600"><?php echo $eventDate->format('Y'); ?></p>
-	                            </div>
-	                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
-	                                <div class="flex items-center mb-2">
-	                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
-	                                        viewBox="0 0 24 24">
-	                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-	                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-	                                    </svg>
-	                                    <p class="text-sm text-gray-600 font-medium">Time</p>
-	                                </div>
-	                                <p class="text-lg font-bold text-gray-800"><?php echo $startTime->format('g:i A') . ' - ' . $endTime->format('g:i A'); ?></p>
-	                                <p class="text-sm text-gray-600"><?php echo number_format($durationHours, 1); ?> hours</p>
-	                            </div>
-	                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
-	                                <div class="flex items-center mb-2">
-	                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
-	                                        viewBox="0 0 24 24">
-	                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-	                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
-	                                        </path>
-	                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-	                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-	                                    </svg>
-	                                    <p class="text-sm text-gray-600 font-medium">Location</p>
-	                                </div>
-	                                <p class="text-lg font-bold text-gray-800"><?php echo htmlspecialchars($nextEvent['location']); ?></p>
-	                                <p class="text-sm text-gray-600"><?php echo htmlspecialchars($nextEvent['cell'] ?? $nextEvent['sector']); ?></p>
-	                            </div>
-	                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
-	                                <div class="flex items-center mb-2">
-	                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
-	                                        viewBox="0 0 24 24">
-	                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-	                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-	                                        </path>
-	                                    </svg>
-	                                    <p class="text-sm text-gray-600 font-medium">Activity</p>
-	                                </div>
-	                                <p class="text-lg font-bold text-gray-800"><?php echo htmlspecialchars($nextEvent['title']); ?></p>
-	                                <p class="text-sm text-gray-600"><?php echo htmlspecialchars(substr($nextEvent['description'], 0, 20)) . '...'; ?></p>
-	                            </div>
-	                        </div>
-	                        <?php else: ?>
+		                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+		                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
+		                                <div class="flex items-center mb-2">
+		                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
+		                                        viewBox="0 0 24 24">
+		                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+		                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2 2v12a2 2 0 002 2z">
+		                                        </path>
+		                                    </svg>
+		                                    <p class="text-sm text-gray-600 font-medium">Date</p>
+		                                </div>
+		                                <p class="text-lg font-bold text-gray-800"><?php echo $eventDate->format('l, M j'); ?></p>
+		                                <p class="text-sm text-gray-600"><?php echo $eventDate->format('Y'); ?></p>
+		                            </div>
+		                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
+		                                <div class="flex items-center mb-2">
+		                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
+		                                        viewBox="0 0 24 24">
+		                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+		                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+		                                    </svg>
+		                                    <p class="text-sm text-gray-600 font-medium">Time</p>
+		                                </div>
+		                                <p class="text-lg font-bold text-gray-800"><?php echo $startTime->format('g:i A') . ' - ' . $endTime->format('g:i A'); ?></p>
+		                                <p class="text-sm text-gray-600"><?php echo number_format($durationHours, 1); ?> hours</p>
+		                            </div>
+		                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
+		                                <div class="flex items-center mb-2">
+		                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
+		                                        viewBox="0 0 24 24">
+		                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+		                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+		                                        </path>
+		                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+		                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+		                                    </svg>
+		                                    <p class="text-sm text-gray-600 font-medium">Location</p>
+		                                </div>
+		                                <p class="text-lg font-bold text-gray-800"><?php echo htmlspecialchars($nextEvent['location']); ?></p>
+		                                <p class="text-sm text-gray-600"><?php echo htmlspecialchars($nextEvent['cell_name'] ?? $nextEvent['sector_name']); ?></p>
+		                            </div>
+		                            <div class="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-success-200">
+		                                <div class="flex items-center mb-2">
+		                                    <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor"
+		                                        viewBox="0 0 24 24">
+		                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+		                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+		                                        </path>
+		                                    </svg>
+		                                    <p class="text-sm text-gray-600 font-medium">Activity</p>
+		                                </div>
+		                                <p class="text-lg font-bold text-gray-800"><?php echo htmlspecialchars($nextEvent['title']); ?></p>
+		                                <p class="text-sm text-gray-600"><?php echo htmlspecialchars(substr($nextEvent['description'], 0, 20)) . '...'; ?></p>
+		                            </div>
+		                        </div>
+		                        <?php else: ?>
                         <div class="text-center py-8">
                             <div class="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4">
                                 <svg class="w-8 h-8 text-gray-500 mx-auto mt-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,24 +424,24 @@
             }
         }
     ?>
-	                                <div class="flex items-center justify-between p-4<?php echo $statusClass; ?> rounded-lg border transition-colors">
-	                                    <div class="flex items-center">
-	                                        <div class="w-10 h-10	                                                              <?php echo $iconClass; ?> rounded-full flex items-center justify-center mr-4">
-	                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-	                                                <?php echo $iconSvg; ?>
-	                                            </svg>
-	                                        </div>
-	                                        <div>
-	                                            <p class="font-semibold text-gray-800"><?php echo $eventDate->format('M j, Y'); ?></p>
-	                                            <p class="text-sm text-gray-600"><?php echo htmlspecialchars($attendance['event_title'] ?? 'Unknown Event') . ($duration ? ' • ' . $duration : ''); ?></p>
-	                                        </div>
-	                                    </div>
-	                                    <div class="text-right">
-	                                        <span class="<?php echo $statusText; ?> text-xs font-medium px-3 py-1 rounded-full"><?php echo ucfirst($attendance['status']); ?></span>
-	                                        <p class="text-xs text-gray-500 mt-1"><?php echo $statusNote; ?></p>
-	                                    </div>
-	                                </div>
-	                                <?php endforeach; ?>
+		                                <div class="flex items-center justify-between p-4<?php echo $statusClass; ?> rounded-lg border transition-colors">
+		                                    <div class="flex items-center">
+		                                        <div class="w-10 h-10		                                                             	                                                              <?php echo $iconClass; ?> rounded-full flex items-center justify-center mr-4">
+		                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+		                                                <?php echo $iconSvg; ?>
+		                                            </svg>
+		                                        </div>
+		                                        <div>
+		                                            <p class="font-semibold text-gray-800"><?php echo $eventDate->format('M j, Y'); ?></p>
+		                                            <p class="text-sm text-gray-600"><?php echo htmlspecialchars($attendance['event_title'] ?? 'Unknown Event') . ($duration ? ' • ' . $duration : ''); ?></p>
+		                                        </div>
+		                                    </div>
+		                                    <div class="text-right">
+		                                        <span class="<?php echo $statusText; ?> text-xs font-medium px-3 py-1 rounded-full"><?php echo ucfirst($attendance['status']); ?></span>
+		                                        <p class="text-xs text-gray-500 mt-1"><?php echo $statusNote; ?></p>
+		                                    </div>
+		                                </div>
+		                                <?php endforeach; ?>
 <?php else: ?>
                                 <div class="text-center py-8">
                                     <div class="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4">
@@ -531,7 +531,7 @@
                                 <!-- Outstanding Fine Alert -->
                                 <?php if (! empty($outstandingFinesDetails)): ?>
 <?php $firstOutstandingFine = $outstandingFinesDetails[0];
-    $dueDate                                                        = $firstOutstandingFine['due_date'] ? new DateTime($firstOutstandingFine['due_date']) : null;
+    $dueDate                    = $firstOutstandingFine['due_date'] ? new DateTime($firstOutstandingFine['due_date']) : null;
 ?>
                                 <div
                                     class="bg-gradient-to-r from-danger-50 to-red-50 border-l-4 border-danger-500 rounded-lg p-4 mb-6">
@@ -621,7 +621,7 @@
                                             <div>
                                                 <p class="font-semibold text-success-800">Recent Payment</p>
                                                 <p class="text-sm text-success-700"><?php echo number_format($lastPaidFine['amount']); ?> RWF •<?php echo(new DateTime($lastPaidFine['paid_date']))->format('M j, Y'); ?></p>
-                                                <p class="text-xs text-success-600 mt-1">Payment method:                                                                                                         <?php echo htmlspecialchars($lastPaidFine['payment_method'] ?? 'N/A'); ?></p>
+                                                <p class="text-xs text-success-600 mt-1">Payment method:                                                                                                                                                                                                                 <?php echo htmlspecialchars($lastPaidFine['payment_method'] ?? 'N/A'); ?></p>
                                             </div>
                                         </div>
                                         <div class="text-right">
@@ -733,7 +733,7 @@
                                     <div class="<?php echo $priorityClass; ?> rounded-lg p-4 hover:shadow-md transition-shadow">
                                         <div class="flex items-start justify-between">
                                             <div class="flex">
-                                                <div class="p-1                                                                <?php echo $iconClass; ?> rounded-lg mr-3 mt-1">
+                                                <div class="p-1                                                                                                                               <?php echo $iconClass; ?> rounded-lg mr-3 mt-1">
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                         <?php echo $iconSvg; ?>
                                                     </svg>

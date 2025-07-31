@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+src/logs/
+logs/
+
+# Database
+*.sqlite
+*.db
+
+# Cache
+cache/
+temp/
+tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PHP
+composer.phar
+
+# Test files (keep some, but exclude debug files)
+test_*.php
+debug_*.php
+check_*.php
+exact_api_test.php
+
+# Backup files
+*.bak
+*.backup

@@ -155,6 +155,22 @@ function isLoggedIn()
  */
 function isAdmin()
 {
+    return isLoggedIn() && in_array($_SESSION['user_role'], ['admin', 'superadmin']);
+}
+
+/**
+ * Check if user is superadmin
+ */
+function isSuperAdmin()
+{
+    return isLoggedIn() && $_SESSION['user_role'] === 'superadmin';
+}
+
+/**
+ * Check if user is regular admin (not superadmin)
+ */
+function isRegularAdmin()
+{
     return isLoggedIn() && $_SESSION['user_role'] === 'admin';
 }
 

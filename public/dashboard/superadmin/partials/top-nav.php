@@ -39,9 +39,9 @@
                     <div class="flex items-center space-x-3">
                         <div
                             class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-sm">
-                            <span class="text-white text-sm font-medium"><?php echo $initials; ?></span>
+                            <span class="text-white text-sm font-medium">AD</span>
                         </div>
-                        <span class="hidden md:block text-sm font-medium"><?php echo $fullName; ?></span>
+                        <span class="hidden md:block text-sm font-medium">Admin User</span>
                         <button onclick="logout()" data-logout-btn
                             class="flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
                             <span class="logout-text">Logout</span>

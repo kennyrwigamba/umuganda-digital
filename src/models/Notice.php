@@ -21,8 +21,10 @@ class Notice
      */
     public function create($data)
     {
-        $query = "INSERT INTO notices (title, content, type, priority, target_audience, cell, sector, district, province, publish_date, expiry_date, status, created_by)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO notices (title, content, type, priority, target_audience,
+                         cell_id, sector_id, district_id, province_id, cell, sector, district, province,
+                         publish_date, expiry_date, status, created_by)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->execute($query, [
             $data['title'],
@@ -30,6 +32,10 @@ class Notice
             $data['type'] ?? 'general',
             $data['priority'] ?? 'medium',
             $data['target_audience'] ?? 'all',
+            $data['cell_id'] ?? null,
+            $data['sector_id'] ?? null,
+            $data['district_id'] ?? null,
+            $data['province_id'] ?? null,
             $data['cell'] ?? null,
             $data['sector'] ?? null,
             $data['district'] ?? null,
@@ -38,7 +44,7 @@ class Notice
             $data['expiry_date'] ?? null,
             $data['status'] ?? 'draft',
             $data['created_by'],
-        ], 'ssssssssssssi');
+        ], 'sssssiiiisssssssi');
 
         $stmt->close();
         return $this->db->getLastInsertId();
@@ -58,6 +64,54 @@ class Notice
 
     /**
      * Get notices for a user based on their location and target audience
+     */
+    /**
+     * Get notices for a user using ID-based location hierarchy
+     */
+    public function getNoticesForUserByLocationIds($user_id, $user_cell_id, $user_sector_id, $user_district_id, $user_role = 'resident', $limit = 10)
+    {
+        $query = "SELECT n.*, u.first_name as creator_first_name, u.last_name as creator_last_name,
+                         nr.read_at,
+                         c.name as cell_name, s.name as sector_name,
+                         d.name as district_name, p.name as province_name,
+                         CASE WHEN nr.user_id IS NOT NULL THEN 1 ELSE 0 END as is_read
+                  FROM notices n
+                  LEFT JOIN users u ON n.created_by = u.id
+                  LEFT JOIN cells c ON n.cell_id = c.id
+                  LEFT JOIN sectors s ON n.sector_id = s.id
+                  LEFT JOIN districts d ON n.district_id = d.id
+                  LEFT JOIN provinces p ON n.province_id = p.id
+                  LEFT JOIN notice_reads nr ON n.id = nr.notice_id AND nr.user_id = ?
+                  WHERE n.status = 'published'
+                    AND (n.expiry_date IS NULL OR n.expiry_date > NOW())
+                    AND (n.target_audience = 'all'
+                         OR n.target_audience = ?
+                         OR (n.target_audience = 'specific_location'
+                             AND (n.cell_id = ? OR n.cell_id IS NULL)
+                             AND (n.sector_id = ? OR n.sector_id IS NULL)
+                             AND (n.district_id = ? OR n.district_id IS NULL)))
+                  ORDER BY
+                    CASE n.priority
+                      WHEN 'critical' THEN 1
+                      WHEN 'high' THEN 2
+                      WHEN 'medium' THEN 3
+                      WHEN 'low' THEN 4
+                    END,
+                    n.publish_date DESC
+                  LIMIT ?";
+
+        return $this->db->fetchAll($query, [
+            $user_id,
+            $user_role,
+            $user_cell_id,
+            $user_sector_id,
+            $user_district_id,
+            $limit,
+        ], 'isiiii');
+    }
+
+    /**
+     * Get notices for a user (legacy method - kept for backward compatibility)
      */
     public function getNoticesForUser($user_id, $user_cell, $user_sector, $user_district, $user_role = 'resident', $limit = 10)
     {
@@ -96,7 +150,15 @@ class Notice
     }
 
     /**
-     * Get recent notices for a user
+     * Get recent notices for a user using ID-based location hierarchy
+     */
+    public function getRecentNoticesForUserByLocationIds($user_id, $user_cell_id, $user_sector_id, $user_district_id, $user_role = 'resident', $limit = 5)
+    {
+        return $this->getNoticesForUserByLocationIds($user_id, $user_cell_id, $user_sector_id, $user_district_id, $user_role, $limit);
+    }
+
+    /**
+     * Get recent notices for a user (legacy method - kept for backward compatibility)
      */
     public function getRecentNoticesForUser($user_id, $user_cell, $user_sector, $user_district, $user_role = 'resident', $limit = 5)
     {
@@ -128,6 +190,35 @@ class Notice
             $user_sector,
             $user_district,
         ], 'issss');
+
+        return $result ? $result['unread_count'] : 0;
+    }
+
+    /**
+     * Get count of unread notices for a user based on location IDs
+     */
+    public function getUnreadNoticesCountByLocationIds($user_id, $user_cell_id, $user_sector_id, $user_district_id, $user_role = 'resident')
+    {
+        $query = "SELECT COUNT(*) as unread_count
+                  FROM notices n
+                  LEFT JOIN notice_reads nr ON n.id = nr.notice_id AND nr.user_id = ?
+                  WHERE n.status = 'published'
+                    AND (n.expiry_date IS NULL OR n.expiry_date > NOW())
+                    AND nr.user_id IS NULL
+                    AND (n.target_audience = 'all'
+                         OR n.target_audience = ?
+                         OR (n.target_audience = 'specific_location'
+                             AND (n.cell_id = ? OR n.cell_id IS NULL)
+                             AND (n.sector_id = ? OR n.sector_id IS NULL)
+                             AND (n.district_id = ? OR n.district_id IS NULL)))";
+
+        $result = $this->db->fetchOne($query, [
+            $user_id,
+            $user_role,
+            $user_cell_id,
+            $user_sector_id,
+            $user_district_id,
+        ], 'issii');
 
         return $result ? $result['unread_count'] : 0;
     }

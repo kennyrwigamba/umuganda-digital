@@ -21,8 +21,10 @@ class UmugandaEvent
      */
     public function create($data)
     {
-        $query = "INSERT INTO umuganda_events (title, description, event_date, start_time, end_time, location, cell, sector, district, province, max_participants, status, created_by)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO umuganda_events (title, description, event_date, start_time, end_time, location,
+                         cell_id, sector_id, district_id, province_id, cell, sector, district, province,
+                         max_participants, status, created_by)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->execute($query, [
             $data['title'],
@@ -31,6 +33,10 @@ class UmugandaEvent
             $data['start_time'],
             $data['end_time'],
             $data['location'],
+            $data['cell_id'] ?? null,
+            $data['sector_id'] ?? null,
+            $data['district_id'] ?? null,
+            $data['province_id'] ?? null,
             $data['cell'] ?? null,
             $data['sector'] ?? null,
             $data['district'] ?? null,
@@ -38,7 +44,7 @@ class UmugandaEvent
             $data['max_participants'] ?? null,
             $data['status'] ?? 'scheduled',
             $data['created_by'],
-        ], 'ssssssssssis');
+        ], 'ssssssiiisssssiss');
 
         $stmt->close();
         return $this->db->getLastInsertId();
@@ -184,7 +190,31 @@ class UmugandaEvent
     }
 
     /**
-     * Get events for a specific user's location
+     * Get events for a specific user's location using ID-based hierarchy
+     */
+    public function getEventsByUserLocationIds($user_cell_id, $user_sector_id, $user_district_id, $limit = 10)
+    {
+        $query = "SELECT e.*,
+                         c.name as cell_name, s.name as sector_name,
+                         d.name as district_name, p.name as province_name
+                  FROM umuganda_events e
+                  LEFT JOIN cells c ON e.cell_id = c.id
+                  LEFT JOIN sectors s ON e.sector_id = s.id
+                  LEFT JOIN districts d ON e.district_id = d.id
+                  LEFT JOIN provinces p ON e.province_id = p.id
+                  WHERE (e.cell_id = ? OR e.cell_id IS NULL)
+                    AND (e.sector_id = ? OR e.sector_id IS NULL)
+                    AND (e.district_id = ? OR e.district_id IS NULL)
+                    AND e.event_date >= CURDATE()
+                    AND e.status IN ('scheduled', 'ongoing')
+                  ORDER BY e.event_date ASC, e.start_time ASC
+                  LIMIT ?";
+
+        return $this->db->fetchAll($query, [$user_cell_id, $user_sector_id, $user_district_id, $limit], 'iiii');
+    }
+
+    /**
+     * Get events for a specific user's location (legacy method - kept for backward compatibility)
      */
     public function getEventsByUserLocation($user_cell, $user_sector, $user_district, $limit = 10)
     {

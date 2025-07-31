@@ -78,7 +78,7 @@ class AuthController
                     'name'  => $user['first_name'] . ' ' . $user['last_name'],
                     'role'  => $user['role'],
                 ],
-                'redirect' => $user['role'] === 'admin' ? 'dashboard/admin/index.php' : 'dashboard/resident/index.php',
+                'redirect' => $this->getRedirectUrl($user['role']),
             ], 'Login successful');
 
         } catch (Exception $e) {
@@ -318,6 +318,23 @@ class AuthController
         } catch (Exception $e) {
             logActivity('Password reset error: ' . $e->getMessage(), 'error');
             errorResponse('Password reset failed', 500);
+        }
+    }
+
+    /**
+     * Get redirect URL based on user role
+     */
+    private function getRedirectUrl($role)
+    {
+        switch ($role) {
+            case 'superadmin':
+                return 'dashboard/superadmin/index.php';
+            case 'admin':
+                return 'dashboard/admin/index.php';
+            case 'resident':
+                return 'dashboard/resident/index.php';
+            default:
+                return 'dashboard/resident/index.php';
         }
     }
 }

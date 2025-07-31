@@ -1,220 +1,3 @@
-<?php
-    /**
-     * Admin Reports & Analytics Dashboard
-     * Dynamic reporting system for sector-specific data
-     */
-
-    // Authentication and Authorization
-    session_start();
-    if (! isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-        header('Location: ../../login.php');
-        exit;
-    }
-
-    // Include required files
-    require_once __DIR__ . '/../../../config/db.php';
-    require_once __DIR__ . '/../../../src/models/User.php';
-
-    // Get database connection
-    global $db;
-    $connection = $db->getConnection();
-
-    $user = new User();
-
-    // Get current admin info
-    $adminId   = $_SESSION['user_id'];
-    $adminInfo = $user->findById($adminId);
-
-        if (! $adminInfo) {
-        // User not found, logout and redirect
-        session_destroy();
-        header('Location: ../../login.php?message=session_expired');
-        exit;
-    }
-
-    // Extract user information for display
-    $firstName  = htmlspecialchars($adminInfo['first_name']);
-    $lastName   = htmlspecialchars($adminInfo['last_name']);
-    $fullName   = $firstName . ' ' . $lastName;
-    $initials   = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
-
-    // Get admin's sector assignment
-    $adminSectorQuery = "
-SELECT aa.sector_id, s.name as sector_name, s.code as sector_code,
-       d.name as district_name, d.id as district_id
-FROM admin_assignments aa
-JOIN sectors s ON aa.sector_id = s.id
-JOIN districts d ON s.district_id = d.id
-WHERE aa.admin_id = ? AND aa.is_active = 1
-LIMIT 1";
-
-    $stmt = $connection->prepare($adminSectorQuery);
-    $stmt->bind_param('i', $adminId);
-    $stmt->execute();
-    $adminSector = $stmt->get_result()->fetch_assoc();
-
-    if (! $adminSector) {
-        die('Error: Admin is not assigned to any sector. Please contact super admin.');
-    }
-
-    $sectorId     = $adminSector['sector_id'];
-    $sectorName   = $adminSector['sector_name'];
-    $districtName = $adminSector['district_name'];
-
-    // Date range handling
-    $startDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01'); // First day of current month
-    $endDate   = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');      // Today
-
-    // Get time period filter (default to 30 days)
-    $period = isset($_GET['period']) ? $_GET['period'] : '30';
-
-    switch ($period) {
-        case '7':
-            $startDate = date('Y-m-d', strtotime('-7 days'));
-            break;
-        case '30':
-            $startDate = date('Y-m-d', strtotime('-30 days'));
-            break;
-        case '90':
-            $startDate = date('Y-m-d', strtotime('-90 days'));
-            break;
-        case 'year':
-            $startDate = date('Y-01-01');
-            break;
-    }
-
-    try {
-        // 1. ATTENDANCE METRICS
-        $attendanceQuery = "
-    SELECT
-        COUNT(*) as total_registered,
-        SUM(CASE WHEN a.status IN ('present', 'late') THEN 1 ELSE 0 END) as total_attended,
-        ROUND(AVG(CASE WHEN a.status IN ('present', 'late') THEN 1 ELSE 0 END) * 100, 1) as attendance_rate,
-        COUNT(DISTINCT a.event_id) as events_count,
-        COUNT(DISTINCT a.user_id) as unique_participants
-    FROM attendance a
-    JOIN umuganda_events e ON a.event_id = e.id
-    WHERE e.sector_id = ? AND e.event_date BETWEEN ? AND ?";
-
-        $stmt = $connection->prepare($attendanceQuery);
-        $stmt->bind_param('iss', $sectorId, $startDate, $endDate);
-        $stmt->execute();
-        $attendanceStats = $stmt->get_result()->fetch_assoc();
-
-        // 2. FINE COLLECTION METRICS
-        $fineQuery = "
-    SELECT
-        COUNT(*) as total_fines,
-        SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as total_collected,
-        SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as total_pending,
-        SUM(amount) as total_amount,
-        ROUND(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) / SUM(amount) * 100, 1) as collection_rate
-    FROM fines f
-    JOIN users u ON f.user_id = u.id
-    WHERE u.sector_id = ? AND f.created_at BETWEEN ? AND ?";
-
-        $stmt = $connection->prepare($fineQuery);
-        $stmt->bind_param('iss', $sectorId, $startDate, $endDate);
-        $stmt->execute();
-        $fineStats = $stmt->get_result()->fetch_assoc();
-
-        // 3. EVENT SUCCESS METRICS
-        $eventQuery = "
-    SELECT
-        COUNT(*) as total_events,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_events,
-        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_events,
-        ROUND(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) / COUNT(*) * 100, 1) as success_rate
-    FROM umuganda_events
-    WHERE sector_id = ? AND event_date BETWEEN ? AND ?";
-
-        $stmt = $connection->prepare($eventQuery);
-        $stmt->bind_param('iss', $sectorId, $startDate, $endDate);
-        $stmt->execute();
-        $eventStats = $stmt->get_result()->fetch_assoc();
-
-        // 4. USER ENGAGEMENT METRICS
-        $engagementQuery = "
-    SELECT
-        COUNT(DISTINCT u.id) as total_users,
-        COUNT(DISTINCT a.user_id) as active_users,
-        ROUND(COUNT(DISTINCT a.user_id) / COUNT(DISTINCT u.id) * 100, 1) as engagement_rate
-    FROM users u
-    LEFT JOIN attendance a ON u.id = a.user_id
-        AND a.created_at BETWEEN ? AND ?
-    WHERE u.sector_id = ? AND u.role = 'resident'";
-
-        $stmt = $connection->prepare($engagementQuery);
-        $stmt->bind_param('ssi', $startDate, $endDate, $sectorId);
-        $stmt->execute();
-        $engagementStats = $stmt->get_result()->fetch_assoc();
-
-        // 5. MONTHLY ATTENDANCE TRENDS (for chart)
-        $trendsQuery = "
-    SELECT
-        DATE_FORMAT(e.event_date, '%Y-%m') as month,
-        COUNT(DISTINCT a.id) as registrations,
-        SUM(CASE WHEN a.status IN ('present', 'late') THEN 1 ELSE 0 END) as attended,
-        ROUND(SUM(CASE WHEN a.status IN ('present', 'late') THEN 1 ELSE 0 END) / COUNT(DISTINCT a.id) * 100, 1) as rate
-    FROM umuganda_events e
-    LEFT JOIN attendance a ON e.id = a.event_id
-    WHERE e.sector_id = ? AND e.event_date BETWEEN ? AND ?
-    GROUP BY DATE_FORMAT(e.event_date, '%Y-%m')
-    ORDER BY month";
-
-        $stmt = $connection->prepare($trendsQuery);
-        $stmt->bind_param('iss', $sectorId, $startDate, $endDate);
-        $stmt->execute();
-        $attendanceTrends = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-        // 6. CELL PERFORMANCE (if applicable)
-        $cellQuery = "
-    SELECT
-        c.name as cell_name,
-        COUNT(DISTINCT u.id) as total_residents,
-        COUNT(DISTINCT a.user_id) as active_participants,
-        ROUND(COUNT(DISTINCT a.user_id) / COUNT(DISTINCT u.id) * 100, 1) as participation_rate
-    FROM cells c
-    LEFT JOIN users u ON c.id = u.cell_id
-    LEFT JOIN attendance a ON u.id = a.user_id
-        AND a.created_at BETWEEN ? AND ?
-    WHERE c.sector_id = ?
-    GROUP BY c.id, c.name
-    ORDER BY participation_rate DESC";
-
-        $stmt = $connection->prepare($cellQuery);
-        $stmt->bind_param('ssi', $startDate, $endDate, $sectorId);
-        $stmt->execute();
-        $cellPerformance = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-        // Set default values for calculations
-        $attendanceRate = $attendanceStats['attendance_rate'] ?? 0;
-        $collectionRate = $fineStats['collection_rate'] ?? 0;
-        $successRate    = $eventStats['success_rate'] ?? 0;
-        $engagementRate = $engagementStats['engagement_rate'] ?? 0;
-
-        $totalCollected  = $fineStats['total_collected'] ?? 0;
-        $totalPending    = $fineStats['total_pending'] ?? 0;
-        $totalEvents     = $eventStats['total_events'] ?? 0;
-        $completedEvents = $eventStats['completed_events'] ?? 0;
-        $avgAttendance   = $attendanceStats['total_attended'] ?? 0;
-
-    } catch (Exception $e) {
-        // Default values in case of error
-        $attendanceRate   = 0;
-        $collectionRate   = 0;
-        $successRate      = 0;
-        $engagementRate   = 0;
-        $totalCollected   = 0;
-        $totalPending     = 0;
-        $totalEvents      = 0;
-        $completedEvents  = 0;
-        $avgAttendance    = 0;
-        $attendanceTrends = [];
-        $cellPerformance  = [];
-    }
-
-?>
 <!-- Header -->
 <?php include __DIR__ . '/partials/header.php'; ?>
 
@@ -235,20 +18,15 @@ LIMIT 1";
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <h1 class="text-2xl font-bold text-gray-900 ml-4 lg:ml-0">Reports & Analytics</h1>
-                            <p class="text-gray-600 mt-1 ml-4 lg:ml-0">
-                                <?php echo htmlspecialchars($sectorName); ?> Sector,<?php echo htmlspecialchars($districtName); ?> District
-                                <span class="text-primary-600 font-medium">
-                                    (<?php echo date('M j', strtotime($startDate)); ?> -<?php echo date('M j, Y', strtotime($endDate)); ?>)
-                                </span>
-                            </p>
+                            <p class="text-gray-600 mt-1 ml-4 lg:ml-0">Comprehensive insights and data analysis</p>
                         </div>
                         <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
-                            <button onclick="toggleDateRangeModal()"
+                            <button
                                 class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-calendar-alt mr-2"></i>
                                 Date Range
                             </button>
-                            <button onclick="generateReport()"
+                            <button id="generateReportBtn"
                                 class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg text-sm font-medium hover:from-primary-700 hover:to-primary-800 shadow-sm transition-all">
                                 <i class="fas fa-file-download mr-2"></i>
                                 Generate Report
@@ -261,38 +39,35 @@ LIMIT 1";
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                         <div class="flex flex-wrap gap-2">
-                            <a href="?period=7"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == '7') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                            <button
+                                class="px-4 py-2 text-sm bg-primary-100 text-primary-700 rounded-lg font-medium hover:bg-primary-200 transition-colors">
                                 Last 7 Days
-                            </a>
-                            <a href="?period=30"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == '30') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                            </button>
+                            <button
+                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                                 Last 30 Days
-                            </a>
-                            <a href="?period=90"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == '90') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                            </button>
+                            <button
+                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                                 Last 3 Months
-                            </a>
-                            <a href="?period=year"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == 'year') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                            </button>
+                            <button
+                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                                 This Year
-                            </a>
-                            <button onclick="toggleCustomRange()"
-                                class="px-4 py-2 text-sm                                                         <?php echo(isset($_GET['start_date']) && isset($_GET['end_date'])) ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                            </button>
+                            <button
+                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                                 Custom Range
                             </button>
                         </div>
 
-                        <form method="GET" id="customRangeForm" class="flex items-center space-x-3                                                                                                   <?php echo(! isset($_GET['start_date'])) ? 'hidden' : ''; ?>">
-                            <input type="date" name="start_date" value="<?php echo htmlspecialchars($startDate); ?>"
+                        <div class="flex items-center space-x-3">
+                            <input type="date" value="2025-06-25"
                                 class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <span class="text-gray-500">to</span>
-                            <input type="date" name="end_date" value="<?php echo htmlspecialchars($endDate); ?>"
+                            <input type="date" value="2025-07-25"
                                 class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                            <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">
-                                Apply
-                            </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
 
@@ -305,15 +80,15 @@ LIMIT 1";
                                 <i class="fas fa-user-check text-xl"></i>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-bold"><?php echo number_format($attendanceRate, 1); ?>%</div>
+                                <div class="text-2xl font-bold">87.3%</div>
                                 <div class="text-blue-100 text-sm">Attendance Rate</div>
                             </div>
                         </div>
                         <div class="flex items-center justify-between text-blue-100 text-sm">
-                            <span>Avg.                                       <?php echo number_format($avgAttendance); ?> present</span>
+                            <span>Avg. 1,089 present</span>
                             <span class="flex items-center">
-                                <i class="fas fa-<?php echo($attendanceRate >= 80) ? 'arrow-up' : (($attendanceRate >= 60) ? 'minus' : 'arrow-down'); ?> mr-1"></i>
-                                <?php echo($attendanceRate >= 80) ? 'Good' : (($attendanceRate >= 60) ? 'Fair' : 'Low'); ?>
+                                <i class="fas fa-arrow-up mr-1"></i>
+                                +2.1%
                             </span>
                         </div>
                     </div>
@@ -325,15 +100,15 @@ LIMIT 1";
                                 <i class="fas fa-money-bill-wave text-xl"></i>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-bold"><?php echo number_format($totalCollected / 1000, 0); ?>K</div>
+                                <div class="text-2xl font-bold">285K</div>
                                 <div class="text-green-100 text-sm">RWF Collected</div>
                             </div>
                         </div>
                         <div class="flex items-center justify-between text-green-100 text-sm">
-                            <span>This period</span>
+                            <span>This month</span>
                             <span class="flex items-center">
-                                <i class="fas fa-<?php echo($collectionRate >= 70) ? 'arrow-up' : (($collectionRate >= 50) ? 'minus' : 'arrow-down'); ?> mr-1"></i>
-                                <?php echo number_format($collectionRate, 0); ?>%
+                                <i class="fas fa-arrow-up mr-1"></i>
+                                +18%
                             </span>
                         </div>
                     </div>
@@ -345,15 +120,15 @@ LIMIT 1";
                                 <i class="fas fa-calendar-check text-xl"></i>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-bold"><?php echo number_format($successRate, 1); ?>%</div>
+                                <div class="text-2xl font-bold">94.2%</div>
                                 <div class="text-purple-100 text-sm">Event Success</div>
                             </div>
                         </div>
                         <div class="flex items-center justify-between text-purple-100 text-sm">
-                            <span><?php echo $completedEvents; ?> events completed</span>
+                            <span>24 events completed</span>
                             <span class="flex items-center">
-                                <i class="fas fa-<?php echo($successRate >= 90) ? 'check' : (($successRate >= 70) ? 'exclamation' : 'times'); ?> mr-1"></i>
-                                <?php echo($successRate >= 90) ? 'Excellent' : (($successRate >= 70) ? 'Good' : 'Needs Improvement'); ?>
+                                <i class="fas fa-check mr-1"></i>
+                                Excellent
                             </span>
                         </div>
                     </div>
@@ -365,15 +140,15 @@ LIMIT 1";
                                 <i class="fas fa-users text-xl"></i>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-bold"><?php echo number_format($engagementRate, 1); ?>%</div>
+                                <div class="text-2xl font-bold">76.8%</div>
                                 <div class="text-orange-100 text-sm">Engagement</div>
                             </div>
                         </div>
                         <div class="flex items-center justify-between text-orange-100 text-sm">
                             <span>Active participation</span>
                             <span class="flex items-center">
-                                <i class="fas fa-<?php echo($engagementRate >= 70) ? 'arrow-up' : (($engagementRate >= 50) ? 'minus' : 'arrow-down'); ?> mr-1"></i>
-                                <?php echo($engagementRate >= 70) ? 'High' : (($engagementRate >= 50) ? 'Medium' : 'Low'); ?>
+                                <i class="fas fa-arrow-up mr-1"></i>
+                                +5.3%
                             </span>
                         </div>
                     </div>
@@ -426,36 +201,47 @@ LIMIT 1";
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-6">Cell Performance</h3>
                         <div class="space-y-4">
-                            <?php if (! empty($cellPerformance)): ?>
-<?php
-    $colors     = ['blue', 'green', 'purple', 'orange', 'red', 'indigo', 'pink'];
-    $colorIndex = 0;
-?>
-<?php foreach ($cellPerformance as $cell): ?>
-<?php $color = $colors[$colorIndex % count($colors)]; ?>
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-3 h-3 bg-<?php echo $color; ?>-500 rounded-full"></div>
-                                            <span class="text-sm font-medium text-gray-700"><?php echo htmlspecialchars($cell['cell_name']); ?></span>
-                                        </div>
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-24 bg-gray-200 rounded-full h-2">
-                                                <div class="bg-<?php echo $color; ?>-500 h-2 rounded-full" style="width:<?php echo $cell['participation_rate']; ?>%"></div>
-                                            </div>
-                                            <span class="text-sm font-medium text-gray-900 w-10"><?php echo number_format($cell['participation_rate'], 0); ?>%</span>
-                                        </div>
-                                    </div>
-                                    <?php $colorIndex++; ?>
-<?php endforeach; ?>
-<?php else: ?>
-                                <div class="text-center py-4">
-                                    <div class="text-gray-500">
-                                        <i class="fas fa-info-circle mb-2"></i>
-                                        <p>No cell data available for this period</p>
-                                        <p class="text-sm">Cell performance will appear here when residents are assigned to cells</p>
-                                    </div>
+                            <!-- Gasabo -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                    <span class="text-sm font-medium text-gray-700">Gasabo</span>
                                 </div>
-                            <?php endif; ?>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-blue-500 h-2 rounded-full" style="width: 92%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900 w-10">92%</span>
+                                </div>
+                            </div>
+
+                            <!-- Nyarugenge -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm font-medium text-gray-700">Nyarugenge</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 88%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900 w-10">88%</span>
+                                </div>
+                            </div>
+
+                            <!-- Kicukiro -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                    <span class="text-sm font-medium text-gray-700">Kicukiro</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-purple-500 h-2 rounded-full" style="width: 84%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900 w-10">84%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -464,56 +250,44 @@ LIMIT 1";
                         <h3 class="text-lg font-semibold text-gray-900 mb-6">Monthly Goals</h3>
                         <div class="space-y-6">
                             <!-- Attendance Goal -->
-                            <?php
-                                $attendanceTarget   = 90;
-                                $attendanceProgress = $attendanceStats['attendance_rate'] ?? 0;
-                                $attendanceProgress = min(100, max(0, $attendanceProgress)); // Ensure 0-100 range
-                                $attendanceOffset   = 226.2 - (($attendanceProgress / 100) * 226.2);
-                            ?>
                             <div class="text-center">
                                 <div class="relative inline-flex">
                                     <svg class="w-20 h-20">
                                         <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="8"
                                             fill="transparent" class="text-gray-200" />
                                         <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="8"
-                                            fill="transparent" stroke-dasharray="226.2" stroke-dashoffset="<?php echo $attendanceOffset; ?>"
+                                            fill="transparent" stroke-dasharray="226.2" stroke-dashoffset="45.24"
                                             class="text-blue-500 progress-ring" />
                                     </svg>
                                     <span
                                         class="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900">
-                                        <?php echo number_format($attendanceProgress, 0); ?>%
+                                        80%
                                     </span>
                                 </div>
                                 <div class="mt-2">
                                     <div class="text-sm font-medium text-gray-900">Attendance Goal</div>
-                                    <div class="text-xs text-gray-500">Target:                                                                               <?php echo $attendanceTarget; ?>%</div>
+                                    <div class="text-xs text-gray-500">Target: 90%</div>
                                 </div>
                             </div>
 
                             <!-- Collection Goal -->
-                            <?php
-                                $collectionTarget   = 400000; // 400K RWF
-                                $actualCollection   = $fineStats['total_collected'] ?? 0;
-                                $collectionProgress = $collectionTarget > 0 ? min(100, ($actualCollection / $collectionTarget) * 100) : 0;
-                                $collectionOffset   = 226.2 - (($collectionProgress / 100) * 226.2);
-                            ?>
                             <div class="text-center">
                                 <div class="relative inline-flex">
                                     <svg class="w-20 h-20">
                                         <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="8"
                                             fill="transparent" class="text-gray-200" />
                                         <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="8"
-                                            fill="transparent" stroke-dasharray="226.2" stroke-dashoffset="<?php echo $collectionOffset; ?>"
+                                            fill="transparent" stroke-dasharray="226.2" stroke-dashoffset="67.86"
                                             class="text-green-500 progress-ring" />
                                     </svg>
                                     <span
                                         class="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900">
-                                        <?php echo number_format($collectionProgress, 0); ?>%
+                                        70%
                                     </span>
                                 </div>
                                 <div class="mt-2">
                                     <div class="text-sm font-medium text-gray-900">Collection Goal</div>
-                                    <div class="text-xs text-gray-500">Target:                                                                               <?php echo number_format($collectionTarget); ?> RWF</div>
+                                    <div class="text-xs text-gray-500">Target: 400K RWF</div>
                                 </div>
                             </div>
                         </div>
@@ -524,62 +298,42 @@ LIMIT 1";
                         <h3 class="text-lg font-semibold text-gray-900 mb-6">Top Performers</h3>
                         <div class="space-y-4">
                             <!-- Best Attendance -->
-                            <?php
-                                $bestAttendanceCell = null;
-                                $highestRate        = 0;
-                                foreach ($cellPerformance as $cell) {
-                                    if ($cell['participation_rate'] > $highestRate) {
-                                        $highestRate        = $cell['participation_rate'];
-                                        $bestAttendanceCell = $cell;
-                                    }
-                                }
-                            ?>
                             <div class="flex items-center space-x-3">
                                 <div
-                                    class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
+                                    class="w-10 h-10 bg-gradient-to-br from-gold-400 to-gold-500 rounded-full flex items-center justify-center">
                                     <i class="fas fa-trophy text-white text-sm"></i>
                                 </div>
                                 <div class="flex-1">
                                     <div class="text-sm font-medium text-gray-900">Best Attendance</div>
-                                    <div class="text-xs text-gray-500">
-                                        <?php if ($bestAttendanceCell): ?>
-<?php echo htmlspecialchars($bestAttendanceCell['cell_name']); ?> -<?php echo number_format($bestAttendanceCell['participation_rate'], 0); ?>%
-                                        <?php else: ?>
-                                            No data available
-                                        <?php endif; ?>
-                                    </div>
+                                    <div class="text-xs text-gray-500">Gasabo Cell - 92%</div>
                                 </div>
-                                <div class="text-lg font-bold text-yellow-500">🥇</div>
+                                <div class="text-lg font-bold text-gold-500">🥇</div>
+                            </div>
+
+                            <!-- Most Improved -->
+                            <div class="flex items-center space-x-3">
+                                <div
+                                    class="w-10 h-10 bg-gradient-to-br from-silver-400 to-silver-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-arrow-up text-white text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-gray-900">Most Improved</div>
+                                    <div class="text-xs text-gray-500">Kicukiro Cell - +8%</div>
+                                </div>
+                                <div class="text-lg font-bold text-silver-500">🥈</div>
                             </div>
 
                             <!-- Highest Collection -->
                             <div class="flex items-center space-x-3">
                                 <div
-                                    class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center">
+                                    class="w-10 h-10 bg-gradient-to-br from-bronze-400 to-bronze-500 rounded-full flex items-center justify-center">
                                     <i class="fas fa-coins text-white text-sm"></i>
                                 </div>
                                 <div class="flex-1">
                                     <div class="text-sm font-medium text-gray-900">Highest Collection</div>
-                                    <div class="text-xs text-gray-500">
-                                        Total:                                               <?php echo number_format($fineStats['total_collected'] ?? 0); ?> RWF
-                                    </div>
+                                    <div class="text-xs text-gray-500">Nyarugenge - 125K RWF</div>
                                 </div>
-                                <div class="text-lg font-bold text-green-500">💰</div>
-                            </div>
-
-                            <!-- Most Active -->
-                            <div class="flex items-center space-x-3">
-                                <div
-                                    class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-users text-white text-sm"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="text-sm font-medium text-gray-900">Most Active</div>
-                                    <div class="text-xs text-gray-500">
-                                        <?php echo $engagementStats['total_events'] ?? 0; ?> events organized
-                                    </div>
-                                </div>
-                                <div class="text-lg font-bold text-blue-500">⭐</div>
+                                <div class="text-lg font-bold text-bronze-500">🥉</div>
                             </div>
                         </div>
                     </div>
@@ -854,23 +608,16 @@ LIMIT 1";
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', function () {
-            // Initialize Charts with dynamic data
+            // Initialize Charts
             // Attendance Trends Chart
             const attendanceTrendsCtx = document.getElementById('attendanceTrendsChart').getContext('2d');
-
-            // Dynamic chart data from PHP
-            const attendanceTrendData =                                        <?php echo json_encode($attendanceTrends); ?>;
-            const chartLabels = attendanceTrendData.map(item => item.month);
-            const attendanceRates = attendanceTrendData.map(item => parseFloat(item.attendance_rate) || 0);
-            const targetData = new Array(chartLabels.length).fill(90); // 90% target
-
             const attendanceTrendsChart = new Chart(attendanceTrendsCtx, {
                 type: 'line',
                 data: {
-                    labels: chartLabels.length > 0 ? chartLabels : ['Current Period'],
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
                     datasets: [{
                         label: 'Attendance Rate %',
-                        data: attendanceRates.length > 0 ? attendanceRates : [<?php echo $attendanceStats['attendance_rate'] ?? 0; ?>],
+                        data: [82, 85, 78, 90, 87, 89, 87],
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         borderWidth: 3,
@@ -883,7 +630,7 @@ LIMIT 1";
                         pointHoverRadius: 8
                     }, {
                         label: 'Target %',
-                        data: targetData.length > 0 ? targetData : [90],
+                        data: [90, 90, 90, 90, 90, 90, 90],
                         borderColor: '#ef4444',
                         backgroundColor: 'transparent',
                         borderWidth: 2,
@@ -926,20 +673,15 @@ LIMIT 1";
                 }
             });
 
-            // Revenue Chart with dynamic data
+            // Revenue Chart
             const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-
-            // For now, show current period data - can be enhanced with monthly trends
-            const currentCollected =                                     <?php echo $fineStats['total_collected'] ?? 0; ?>;
-            const currentOutstanding =                                       <?php echo $fineStats['total_outstanding'] ?? 0; ?>;
-
             const revenueChart = new Chart(revenueCtx, {
                 type: 'bar',
                 data: {
-                    labels: chartLabels.length > 0 ? chartLabels : ['Current Period'],
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
                     datasets: [{
                         label: 'Collections (RWF)',
-                        data: [currentCollected],
+                        data: [285000, 320000, 195000, 275000, 380000, 295000, 285000],
                         backgroundColor: 'rgba(34, 197, 94, 0.8)',
                         borderColor: '#16a34a',
                         borderWidth: 1,
@@ -947,7 +689,7 @@ LIMIT 1";
                         borderSkipped: false,
                     }, {
                         label: 'Outstanding (RWF)',
-                        data: [currentOutstanding],
+                        data: [125000, 98000, 156000, 110000, 85000, 120000, 145000],
                         backgroundColor: 'rgba(239, 68, 68, 0.8)',
                         borderColor: '#dc2626',
                         borderWidth: 1,
@@ -975,7 +717,7 @@ LIMIT 1";
                             },
                             ticks: {
                                 callback: function (value) {
-                                    return (value / 1000).toFixed(0) + 'K';
+                                    return value / 1000 + 'K';
                                 }
                             }
                         },

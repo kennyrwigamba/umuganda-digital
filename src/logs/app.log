@@ -75,3 +75,33 @@
 [2025-07-28 21:03:10] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com
 [2025-07-28 22:32:00] [info] [User: 6] [IP: 127.0.0.1] User changed password
 [2025-07-28 22:32:19] [info] [User: 6] [IP: 127.0.0.1] User updated preferences
+[2025-07-29 09:47:44] [info] [User: 1] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-07-29 13:54:22] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com
+[2025-07-29 14:20:48] [info] [User: guest] [IP: 127.0.0.1] User logged out: grace@example.com
+[2025-07-29 14:21:05] [info] [User: 7] [IP: 127.0.0.1] User logged in: patrick@example.com
+[2025-07-29 17:47:49] [info] [User: 7] [IP: 127.0.0.1] User logged in: patrick@example.com
+[2025-07-29 17:49:26] [info] [User: 7] [IP: 127.0.0.1] User updated preferences
+[2025-07-29 17:49:40] [info] [User: 7] [IP: 127.0.0.1] User updated preferences
+[2025-07-29 17:51:53] [info] [User: guest] [IP: 127.0.0.1] User logged out: patrick@example.com
+[2025-07-29 17:52:04] [info] [User: 1] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-07-29 18:37:16] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-07-29 18:38:05] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: admin.gasabo@umuganda.rw
+[2025-07-29 18:40:42] [info] [User: 2] [IP: 127.0.0.1] User logged in: marie.admin@umuganda.gov.rw
+[2025-07-29 19:34:07] [info] [User: guest] [IP: 127.0.0.1] User logged out: marie.admin@umuganda.gov.rw
+[2025-07-29 19:34:45] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: admin.nyarugenge@umuganda.rw
+[2025-07-29 19:34:55] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: admin.nyarugenge@umuganda.rw
+[2025-07-29 19:35:17] [info] [User: 15] [IP: 127.0.0.1] User logged in: admin.nyarugenge@umuganda.rw
+[2025-07-29 19:36:23] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin.nyarugenge@umuganda.rw
+[2025-07-29 19:37:12] [info] [User: 1] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-07-29 19:37:18] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-07-29 19:38:18] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-07-29 19:47:35] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-07-29 19:47:53] [info] [User: 3] [IP: 127.0.0.1] User logged in: eric@example.com
+[2025-07-29 19:49:54] [info] [User: guest] [IP: 127.0.0.1] User logged out: eric@example.com
+[2025-07-29 19:50:01] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-07-30 14:23:01] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-07-30 14:23:07] [info] [User: 15] [IP: 127.0.0.1] User logged in: admin.nyarugenge@umuganda.rw
+[2025-07-30 14:23:44] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin.nyarugenge@umuganda.rw
+[2025-07-30 14:24:10] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-07-31 12:40:36] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: grace@example.com
+[2025-07-31 12:40:41] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com

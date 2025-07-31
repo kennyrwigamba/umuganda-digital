@@ -1,3 +1,170 @@
+<?php
+    /**
+     * Admin Dashboard
+     * Main dashboard page for admins - sector level management
+     */
+
+    session_start();
+
+    // Check if user is logged in
+    if (! isset($_SESSION['user_id'])) {
+        header('Location: ../../login.php');
+        exit;
+    }
+
+    // Check if user is admin (superadmins have their own dashboard)
+    if ($_SESSION['user_role'] !== 'admin') {
+        // Redirect based on role
+        if ($_SESSION['user_role'] === 'superadmin') {
+            header('Location: ../superadmin/index.php');
+        } else {
+            header('Location: ../resident/index.php');
+        }
+        exit;
+    }
+
+    // Include required classes
+    require_once __DIR__ . '/../../../config/db.php';
+    require_once __DIR__ . '/../../../src/models/User.php';
+    require_once __DIR__ . '/../../../src/models/Attendance.php';
+    require_once __DIR__ . '/../../../src/models/Fine.php';
+    require_once __DIR__ . '/../../../src/models/UmugandaEvent.php';
+
+    // Use the global database instance
+    global $db;
+    $connection = $db->getConnection();
+
+    $user          = new User();
+    $attendance    = new Attendance();
+    $fine          = new Fine();
+    $umugandaEvent = new UmugandaEvent();
+
+    // Get current admin info
+    $adminId   = $_SESSION['user_id'];
+    $adminInfo = $user->findById($adminId);
+
+
+    if (! $adminInfo) {
+        // User not found, logout and redirect
+        session_destroy();
+        header('Location: ../../login.php?message=session_expired');
+        exit;
+    }
+
+    // Extract user information for display
+    $firstName  = htmlspecialchars($adminInfo['first_name']);
+    $lastName   = htmlspecialchars($adminInfo['last_name']);
+    $fullName   = $firstName . ' ' . $lastName;
+    $initials   = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+
+    // Get admin's assigned sector from admin_assignments table
+    $adminSectorQuery = "
+    SELECT s.name as sector_name, s.id as sector_id
+    FROM admin_assignments aa
+    JOIN sectors s ON aa.sector_id = s.id
+    WHERE aa.admin_id = ? AND aa.is_active = 1
+    LIMIT 1";
+
+    $stmt = $connection->prepare($adminSectorQuery);
+    $stmt->bind_param('i', $adminId);
+    $stmt->execute();
+    $sectorResult = $stmt->get_result()->fetch_assoc();
+
+    if ($sectorResult) {
+        $adminSector   = $sectorResult['sector_name'];
+        $adminSectorId = $sectorResult['sector_id'];
+    } else {
+        // Fallback: try to get sector from user table if available
+        if (isset($adminInfo['sector_id']) && $adminInfo['sector_id']) {
+            $sectorQuery = "SELECT name FROM sectors WHERE id = ?";
+            $stmt        = $connection->prepare($sectorQuery);
+            $stmt->bind_param('i', $adminInfo['sector_id']);
+            $stmt->execute();
+            $sectorData    = $stmt->get_result()->fetch_assoc();
+            $adminSector   = $sectorData ? $sectorData['name'] : 'Kimironko'; // Default for demo
+            $adminSectorId = $adminInfo['sector_id'];
+        } else {
+            // Default sector for testing
+            $adminSector   = 'Kimironko';
+            $adminSectorId = 1; // Assuming Kimironko has ID 1
+        }
+    }
+
+    // Get dashboard statistics for the admin's sector
+    try {
+        // Get total residents in admin's sector
+        $totalResidentsQuery = "SELECT COUNT(*) as count FROM users WHERE role = 'resident' AND sector_id = ? AND status = 'active'";
+        $stmt                = $connection->prepare($totalResidentsQuery);
+        $stmt->bind_param('i', $adminSectorId);
+        $stmt->execute();
+        $totalResidents = $stmt->get_result()->fetch_assoc()['count'];
+
+        // Get new residents this month
+        $newResidentsQuery = "SELECT COUNT(*) as count FROM users WHERE role = 'resident' AND sector_id = ? AND status = 'active' AND DATE_FORMAT(created_at, '%Y-%m') = ?";
+        $stmt              = $connection->prepare($newResidentsQuery);
+        $currentMonth      = date('Y-m');
+        $stmt->bind_param('is', $adminSectorId, $currentMonth);
+        $stmt->execute();
+        $newResidents = $stmt->get_result()->fetch_assoc()['count'];
+
+        // Get latest Umuganda event attendance rate for this sector
+        $attendanceQuery = "
+        SELECT
+            COUNT(a.id) as total_attendance,
+            SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) as present_count,
+            ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / COUNT(a.id)) * 100, 1) as attendance_rate
+        FROM attendance a
+        JOIN users u ON a.user_id = u.id
+        JOIN umuganda_events e ON a.event_id = e.id
+        WHERE u.sector_id = ? AND e.event_date = (
+            SELECT MAX(event_date) FROM umuganda_events WHERE status = 'completed'
+        )";
+        $stmt = $connection->prepare($attendanceQuery);
+        $stmt->bind_param('i', $adminSectorId);
+        $stmt->execute();
+        $attendanceData = $stmt->get_result()->fetch_assoc();
+        $attendanceRate = $attendanceData['attendance_rate'] ?? 0;
+
+        // Get unpaid fines for admin's sector
+        $finesQuery = "
+        SELECT
+            SUM(f.amount) as total_unpaid,
+            COUNT(DISTINCT f.user_id) as residents_with_fines
+        FROM fines f
+        JOIN users u ON f.user_id = u.id
+        WHERE u.sector_id = ? AND f.status = 'pending'";
+        $stmt = $connection->prepare($finesQuery);
+        $stmt->bind_param('i', $adminSectorId);
+        $stmt->execute();
+        $finesData          = $stmt->get_result()->fetch_assoc();
+        $totalUnpaidFines   = $finesData['total_unpaid'] ?? 0;
+        $residentsWithFines = $finesData['residents_with_fines'] ?? 0;
+
+        // Get next Umuganda event
+        $nextEventQuery = "SELECT * FROM umuganda_events WHERE event_date >= CURDATE() ORDER BY event_date ASC LIMIT 1";
+        $stmt           = $connection->prepare($nextEventQuery);
+        $stmt->execute();
+        $nextEvent     = $stmt->get_result()->fetch_assoc();
+        $nextEventDate = $nextEvent ? date('M d', strtotime($nextEvent['event_date'])) : 'Not Scheduled';
+        $nextEventDay  = $nextEvent ? date('l', strtotime($nextEvent['event_date'])) : '';
+        $nextEventYear = $nextEvent ? date('Y', strtotime($nextEvent['event_date'])) : '';
+
+    } catch (Exception $e) {
+        // Default values if queries fail
+        $totalResidents     = 0;
+        $newResidents       = 0;
+        $attendanceRate     = 0;
+        $totalUnpaidFines   = 0;
+        $residentsWithFines = 0;
+        $nextEventDate      = 'Not Scheduled';
+        $nextEventDay       = '';
+        $nextEventYear      = '';
+    }
+
+    // Format unpaid fines for display
+    $finesDisplay = number_format($totalUnpaidFines / 1000, 0) . 'K';
+?>
+
 <!-- Header -->
 <?php include __DIR__ . '/partials/header.php'; ?>
 
@@ -16,6 +183,7 @@
                 <!-- Page Title -->
                 <div class="mb-6">
                     <h1 class="text-2xl font-bold text-gray-900 ml-4 lg:ml-0">Dashboard Overview</h1>
+                    <p class="text-sm text-gray-600 ml-4 lg:ml-0 mt-1">Managing                                                                                                                                                               <?php echo htmlspecialchars($adminSector); ?> Sector</p>
                 </div>
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -26,12 +194,12 @@
                             <div>
                                 <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide">Total Residents
                                 </p>
-                                <p class="text-3xl font-black text-gray-900 mt-2">1,247</p>
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo number_format($totalResidents); ?></p>
                                 <div class="flex items-center mt-3">
                                     <span
                                         class="inline-flex items-center text-sm text-success-600 font-semibold bg-success-50 px-2 py-1 rounded-full">
                                         <i class="fas fa-arrow-up text-xs mr-1"></i>
-                                        +12
+                                        +<?php echo $newResidents; ?>
                                     </span>
                                     <span class="text-sm text-gray-600 ml-2 font-medium">this month</span>
                                 </div>
@@ -50,14 +218,14 @@
                             <div>
                                 <p class="text-sm font-semibold text-green-600 uppercase tracking-wide">Attendance Rate
                                 </p>
-                                <p class="text-3xl font-black text-gray-900 mt-2">87.3%</p>
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo $attendanceRate; ?>%</p>
                                 <div class="flex items-center mt-3">
                                     <span
-                                        class="inline-flex items-center text-sm text-success-600 font-semibold bg-success-50 px-2 py-1 rounded-full">
-                                        <i class="fas fa-arrow-up text-xs mr-1"></i>
-                                        +2.1%
+                                        class="inline-flex items-center text-sm                                                                                                                                                               <?php echo $attendanceRate >= 80 ? 'text-success-600 bg-success-50' : 'text-warning-600 bg-warning-50'; ?> font-semibold px-2 py-1 rounded-full">
+                                        <i class="fas                                                                                                           <?php echo $attendanceRate >= 80 ? 'fa-arrow-up' : 'fa-arrow-down'; ?> text-xs mr-1"></i>
+                                        <?php echo $attendanceRate >= 80 ? 'Good' : 'Needs Improvement'; ?>
                                     </span>
-                                    <span class="text-sm text-gray-600 ml-2 font-medium">from last session</span>
+                                    <span class="text-sm text-gray-600 ml-2 font-medium">last session</span>
                                 </div>
                             </div>
                             <div
@@ -74,13 +242,13 @@
                             <div>
                                 <p class="text-sm font-semibold text-orange-600 uppercase tracking-wide">Unpaid Fines
                                 </p>
-                                <p class="text-3xl font-black text-gray-900 mt-2">428K <span
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo $finesDisplay; ?> <span
                                         class="text-lg text-orange-700 font-bold">RWF</span></p>
                                 <div class="flex items-center mt-3">
                                     <span
                                         class="inline-flex items-center text-sm text-danger-600 font-semibold bg-danger-50 px-2 py-1 rounded-full">
                                         <i class="fas fa-exclamation-circle text-xs mr-1"></i>
-                                        156
+                                        <?php echo $residentsWithFines; ?>
                                     </span>
                                     <span class="text-sm text-gray-600 ml-2 font-medium">residents owe fines</span>
                                 </div>
@@ -99,14 +267,14 @@
                             <div>
                                 <p class="text-sm font-semibold text-purple-600 uppercase tracking-wide">Next Umuganda
                                 </p>
-                                <p class="text-3xl font-black text-gray-900 mt-2">July 27</p>
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo $nextEventDate; ?></p>
                                 <div class="flex items-center mt-3">
                                     <span
                                         class="inline-flex items-center text-sm text-primary-600 font-semibold bg-primary-50 px-2 py-1 rounded-full">
                                         <i class="fas fa-calendar text-xs mr-1"></i>
-                                        2025
+                                        <?php echo $nextEventYear; ?>
                                     </span>
-                                    <span class="text-sm text-gray-600 ml-2 font-medium">Saturday</span>
+                                    <span class="text-sm text-gray-600 ml-2 font-medium"><?php echo $nextEventDay; ?></span>
                                 </div>
                             </div>
                             <div
@@ -154,6 +322,84 @@
                     </div>
                 </div>
 
+                <?php
+                    // Get attendance data for chart (last 6 months)
+                    $attendanceChartQuery = "
+                    SELECT
+                        DATE_FORMAT(e.event_date, '%b') as month,
+                        ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / COUNT(a.id)) * 100, 1) as attendance_rate
+                    FROM umuganda_events e
+                    LEFT JOIN attendance a ON e.id = a.event_id
+                    LEFT JOIN users u ON a.user_id = u.id
+                    WHERE e.event_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                        AND e.status = 'completed'
+                        AND (u.sector_id = ? OR u.sector_id IS NULL)
+                    GROUP BY DATE_FORMAT(e.event_date, '%Y-%m'), DATE_FORMAT(e.event_date, '%b')
+                    ORDER BY e.event_date ASC";
+
+                    $stmt = $connection->prepare($attendanceChartQuery);
+                    $stmt->bind_param('i', $adminSectorId);
+                    $stmt->execute();
+                    $attendanceChartData = $stmt->get_result();
+
+                    $chartLabels = [];
+                    $chartData   = [];
+                    while ($row = $attendanceChartData->fetch_assoc()) {
+                        $chartLabels[] = $row['month'];
+                        $chartData[]   = $row['attendance_rate'] ?? 0;
+                    }
+
+                    // Ensure we have at least 6 data points
+                    $months        = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    $currentMonth  = (int) date('n') - 1; // 0-based index
+                    $defaultLabels = [];
+                    $defaultData   = [];
+
+                    for ($i = 5; $i >= 0; $i--) {
+                        $monthIndex      = ($currentMonth - $i + 12) % 12;
+                        $defaultLabels[] = $months[$monthIndex];
+                        $defaultData[]   = 0;
+                    }
+
+                    if (empty($chartLabels)) {
+                        $chartLabels = $defaultLabels;
+                        $chartData   = $defaultData;
+                    }
+
+                    // Get fines distribution data
+                    $finesDistributionQuery = "
+                    SELECT
+                        f.reason,
+                        SUM(f.amount) as total_amount,
+                        COUNT(*) as count
+                    FROM fines f
+                    JOIN users u ON f.user_id = u.id
+                    WHERE u.sector_id = ? AND f.status IN ('pending', 'paid')
+                    GROUP BY f.reason";
+
+                    $stmt = $connection->prepare($finesDistributionQuery);
+                    $stmt->bind_param('i', $adminSectorId);
+                    $stmt->execute();
+                    $finesDistributionData = $stmt->get_result();
+
+                    $finesLabels  = [];
+                    $finesAmounts = [];
+                    $finesColors  = ['#ef4444', '#f59e0b', '#f97316', '#22c55e'];
+                    $colorIndex   = 0;
+
+                    while ($row = $finesDistributionData->fetch_assoc()) {
+                        $finesLabels[]  = ucfirst(str_replace('_', ' ', $row['reason']));
+                        $finesAmounts[] = $row['total_amount'];
+                    }
+
+                    // Add default data if no fines
+                    if (empty($finesLabels)) {
+                        $finesLabels  = ['No Data Available'];
+                        $finesAmounts = [1];
+                        $finesColors  = ['#e5e7eb'];
+                    }
+                ?>
+
                 <!-- Data Tables Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Recent Residents -->
@@ -182,67 +428,57 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div
-                                                    class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                                    <span class="text-white text-sm font-semibold">SM</span>
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-medium text-gray-900">Sarah Mukamana</div>
-                                                    <div class="text-sm text-gray-500">ID: 001247</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">Gasabo
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-success-100 text-success-800">Active</span>
-                                        </td>
+                                    <?php
+                                        // Get recent residents from admin's sector
+                                        $recentResidentsQuery = "
+                                        SELECT u.first_name, u.last_name, u.national_id, u.status, u.created_at,
+                                               COALESCE(c.name, 'No Cell') as cell_name
+                                        FROM users u
+                                        LEFT JOIN cells c ON u.cell_id = c.id
+                                        WHERE u.role = 'resident' AND u.sector_id = ?
+                                        ORDER BY u.created_at DESC
+                                        LIMIT 5";
+                                        $stmt = $connection->prepare($recentResidentsQuery);
+                                        $stmt->bind_param('i', $adminSectorId);
+                                        $stmt->execute();
+                                        $recentResidents = $stmt->get_result();
+
+                                        $colors     = ['primary', 'warning', 'success', 'danger', 'purple'];
+                                        $colorIndex = 0;
+
+                                        while ($resident = $recentResidents->fetch_assoc()):
+                                            $initials = strtoupper(substr($resident['first_name'], 0, 1) . substr($resident['last_name'], 0, 1));
+                                            $color    = $colors[$colorIndex % count($colors)];
+                                            $colorIndex++;
+                                            $statusColor = $resident['status'] === 'active' ? 'success' : 'warning';
+                                            $statusText  = ucfirst($resident['status']);
+                                        ?>
+		                                    <tr class="hover:bg-gray-50 transition-colors">
+		                                        <td class="px-6 py-4 whitespace-nowrap">
+		                                            <div class="flex items-center">
+		                                                <div
+		                                                    class="w-10 h-10 bg-gradient-to-br from-<?php echo $color; ?>-500 to-<?php echo $color; ?>-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
+		                                                    <span class="text-white text-sm font-semibold"><?php echo $initials; ?></span>
+		                                                </div>
+		                                                <div>
+		                                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($resident['first_name'] . ' ' . $resident['last_name']); ?></div>
+		                                                    <div class="text-sm text-gray-500">ID:		                                                                                          	                                                                                           <?php echo htmlspecialchars($resident['national_id']); ?></div>
+		                                                </div>
+		                                            </div>
+		                                        </td>
+		                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"><?php echo htmlspecialchars($resident['cell_name']); ?></td>
+		                                        <td class="px-6 py-4 whitespace-nowrap">
+		                                            <span
+		                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-<?php echo $statusColor; ?>-100 text-<?php echo $statusColor; ?>-800"><?php echo $statusText; ?></span>
+		                                        </td>
+		                                    </tr>
+		                                    <?php endwhile; ?>
+
+                                    <?php if ($recentResidents->num_rows === 0): ?>
+                                    <tr>
+                                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No residents found</td>
                                     </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div
-                                                    class="w-10 h-10 bg-gradient-to-br from-warning-500 to-warning-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                                    <span class="text-white text-sm font-semibold">JB</span>
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-medium text-gray-900">Jean Baptiste</div>
-                                                    <div class="text-sm text-gray-500">ID: 001248</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                            Nyarugenge</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-warning-100 text-warning-800">Fine
-                                                Due</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div
-                                                    class="w-10 h-10 bg-gradient-to-br from-success-500 to-success-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                                    <span class="text-white text-sm font-semibold">MC</span>
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-medium text-gray-900">Marie Claire</div>
-                                                    <div class="text-sm text-gray-500">ID: 001249</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                            Kicukiro</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-success-100 text-success-800">Active</span>
-                                        </td>
-                                    </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -274,68 +510,54 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div
-                                                    class="w-10 h-10 bg-gradient-to-br from-danger-500 to-danger-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                                    <span class="text-white text-sm font-semibold">PC</span>
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-medium text-gray-900">Paul Cyiza</div>
-                                                    <div class="text-sm text-gray-500">ID: 001250</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">15,000
-                                            RWF</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-danger-100 text-danger-800">Absence</span>
-                                        </td>
+                                    <?php
+                                        // Get outstanding fines from admin's sector
+                                        $outstandingFinesQuery = "
+                                        SELECT u.first_name, u.last_name, u.national_id, f.amount, f.reason
+                                        FROM fines f
+                                        JOIN users u ON f.user_id = u.id
+                                        WHERE u.sector_id = ? AND f.status = 'pending'
+                                        ORDER BY f.amount DESC
+                                        LIMIT 5";
+                                        $stmt = $connection->prepare($outstandingFinesQuery);
+                                        $stmt->bind_param('i', $adminSectorId);
+                                        $stmt->execute();
+                                        $outstandingFines = $stmt->get_result();
+
+                                        $colorIndex = 0;
+
+                                        while ($fine = $outstandingFines->fetch_assoc()):
+                                            $initials    = strtoupper(substr($fine['first_name'], 0, 1) . substr($fine['last_name'], 0, 1));
+                                            $color       = $fine['amount'] >= 20000 ? 'danger' : ($fine['amount'] >= 10000 ? 'warning' : 'orange');
+                                            $reasonText  = str_replace('_', ' ', ucfirst($fine['reason']));
+                                            $reasonColor = $fine['reason'] === 'absence' ? 'danger' : ($fine['reason'] === 'late_arrival' ? 'warning' : 'orange');
+                                        ?>
+		                                    <tr class="hover:bg-gray-50 transition-colors">
+		                                        <td class="px-6 py-4 whitespace-nowrap">
+		                                            <div class="flex items-center">
+		                                                <div
+		                                                    class="w-10 h-10 bg-gradient-to-br from-<?php echo $color; ?>-500 to-<?php echo $color; ?>-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
+		                                                    <span class="text-white text-sm font-semibold"><?php echo $initials; ?></span>
+		                                                </div>
+		                                                <div>
+		                                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($fine['first_name'] . ' ' . $fine['last_name']); ?></div>
+		                                                    <div class="text-sm text-gray-500">ID:		                                                                                          	                                                                                           <?php echo htmlspecialchars($fine['national_id']); ?></div>
+		                                                </div>
+		                                            </div>
+		                                        </td>
+		                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?php echo number_format($fine['amount']); ?> RWF</td>
+		                                        <td class="px-6 py-4 whitespace-nowrap">
+		                                            <span
+		                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-<?php echo $reasonColor; ?>-100 text-<?php echo $reasonColor; ?>-800"><?php echo $reasonText; ?></span>
+		                                        </td>
+		                                    </tr>
+		                                    <?php endwhile; ?>
+
+                                    <?php if ($outstandingFines->num_rows === 0): ?>
+                                    <tr>
+                                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No outstanding fines</td>
                                     </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div
-                                                    class="w-10 h-10 bg-gradient-to-br from-warning-500 to-warning-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                                    <span class="text-white text-sm font-semibold">AN</span>
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-medium text-gray-900">Alice Nyiraneza</div>
-                                                    <div class="text-sm text-gray-500">ID: 001251</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">5,000
-                                            RWF</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-warning-100 text-warning-800">Late
-                                                Arrival</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div
-                                                    class="w-10 h-10 bg-gradient-to-br from-danger-500 to-danger-600 rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                                    <span class="text-white text-sm font-semibold">EK</span>
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-medium text-gray-900">Eric Kamanzi</div>
-                                                    <div class="text-sm text-gray-500">ID: 001252</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">25,000
-                                            RWF</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-danger-100 text-danger-800">No
-                                                Show</span>
-                                        </td>
-                                    </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -347,100 +569,18 @@
 
     <!-- Scripts -->
     <script>
-        // Mobile menu functionality
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const desktopSidebarToggle = document.getElementById('desktop-sidebar-toggle');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebar-overlay');
-        const closeSidebar = document.getElementById('close-sidebar');
-        const mainContent = document.getElementById('main-content');
-
-        let sidebarHidden = false;
-
-        // Initialize sidebar position based on screen size
-        function initializeSidebar() {
-            if (window.innerWidth >= 1024) {
-                // Desktop - show sidebar by default
-                sidebar.classList.remove('-translate-x-full');
-                mainContent.classList.add('lg:ml-64');
-                mainContent.classList.remove('lg:ml-0');
-                sidebarHidden = false;
-            } else {
-                // Mobile - hide sidebar by default
-                sidebar.classList.add('-translate-x-full');
-                sidebarOverlay.classList.add('hidden');
-            }
-        }
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('-translate-x-full');
-            sidebarOverlay.classList.toggle('hidden');
-        }
-
-        function hideSidebar() {
-            sidebar.classList.add('-translate-x-full');
-            sidebarOverlay.classList.add('hidden');
-        }
-
-        function toggleDesktopSidebar() {
-            if (window.innerWidth >= 1024) {
-                if (sidebarHidden) {
-                    // Show sidebar
-                    sidebar.classList.remove('-translate-x-full');
-                    mainContent.classList.add('lg:ml-64');
-                    mainContent.classList.remove('lg:ml-0');
-                    sidebarHidden = false;
-                } else {
-                    // Hide sidebar
-                    sidebar.classList.add('-translate-x-full');
-                    mainContent.classList.remove('lg:ml-64');
-                    mainContent.classList.add('lg:ml-0');
-                    sidebarHidden = true;
-                }
-            }
-        }
-
-        // Event listeners
-        mobileMenuBtn.addEventListener('click', toggleSidebar);
-        desktopSidebarToggle.addEventListener('click', toggleDesktopSidebar);
-        sidebarOverlay.addEventListener('click', hideSidebar);
-        closeSidebar.addEventListener('click', hideSidebar);
-
-        // Handle window resize
-        window.addEventListener('resize', function () {
-            if (window.innerWidth >= 1024) {
-                // Desktop view - hide mobile overlay
-                sidebarOverlay.classList.add('hidden');
-
-                // Reset sidebar position for desktop if it wasn't manually hidden
-                if (!sidebarHidden) {
-                    sidebar.classList.remove('-translate-x-full');
-                    mainContent.classList.add('lg:ml-64');
-                    mainContent.classList.remove('lg:ml-0');
-                }
-            } else {
-                // Mobile view - reset to default mobile behavior
-                sidebar.classList.add('-translate-x-full');
-                mainContent.classList.remove('lg:ml-0');
-                mainContent.classList.add('lg:ml-64');
-                sidebarHidden = false;
-            }
-        });
-
         // Initialize on load
         document.addEventListener('DOMContentLoaded', function () {
-            initializeSidebar();
-
             // Initialize Charts
             // Attendance Chart
             const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
             const attendanceChart = new Chart(attendanceCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    labels:                                                       <?php echo json_encode($chartLabels); ?>,
                     datasets: [{
                         label: 'Attendance Rate %',
-                        data: [82, 85, 78, 90, 87, 89],
+                        data:                                                           <?php echo json_encode($chartData); ?>,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         borderWidth: 3,
@@ -504,10 +644,10 @@
             const finesChart = new Chart(finesCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Absence Fines', 'Late Arrival', 'No Show', 'Paid'],
+                    labels:                                                       <?php echo json_encode($finesLabels); ?>,
                     datasets: [{
-                        data: [128500, 85000, 75000, 340000],
-                        backgroundColor: ['#ef4444', '#f59e0b', '#f97316', '#22c55e'],
+                        data:                                                           <?php echo json_encode($finesAmounts); ?>,
+                        backgroundColor:                                                                                 <?php echo json_encode(array_slice($finesColors, 0, count($finesLabels))); ?>,
                         borderWidth: 0,
                         cutout: '65%'
                     }]
@@ -532,49 +672,7 @@
                 }
             });
         });
-
-        // Logout functionality
-        async function logout() {
-            try {
-                // Show confirmation dialog
-                if (!confirm('Are you sure you want to log out?')) {
-                    return;
-                }
-
-                // Show loading state
-                const logoutBtn = document.querySelector('[data-logout-btn]');
-                const logoutText = logoutBtn.querySelector('.logout-text');
-                if (logoutBtn && logoutText) {
-                    logoutBtn.disabled = true;
-                    logoutText.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Logging out...';
-                }
-
-                // Make logout request
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success || !response.ok) {
-                    // Redirect to login page regardless of API response
-                    window.location.href = '/login.php?message=logged_out';
-                } else {
-                    throw new Error(result.error || 'Logout failed');
-                }
-
-            } catch (error) {
-                console.error('Logout error:', error);
-
-                // Fallback: redirect to logout page
-                window.location.href = '/logout.php';
-            }
-        }
     </script>
-</body>
 
-</html>
+<!-- Footer -->
+<?php include __DIR__ . '/partials/footer.php'; ?>

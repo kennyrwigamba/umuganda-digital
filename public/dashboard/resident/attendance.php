@@ -27,7 +27,7 @@
 
     // Get user data
     $userModel = new User();
-    $user      = $userModel->findById($_SESSION['user_id']);
+    $user      = $userModel->findByIdWithLocation($_SESSION['user_id']);
 
     if (! $user) {
         // User not found, logout and redirect
@@ -43,7 +43,7 @@
     $email      = htmlspecialchars($user['email']);
     $phone      = htmlspecialchars($user['phone']);
     $nationalId = htmlspecialchars($user['national_id']);
-    $location   = htmlspecialchars($user['cell'] . ', ' . $user['sector'] . ', ' . $user['district']);
+    $location   = htmlspecialchars($user['cell_name'] . ', ' . $user['sector_name'] . ', ' . $user['district_name']);
     $initials   = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
     // Initialize models
@@ -225,11 +225,11 @@
                                 <!-- Status Filter -->
                                 <select id="statusFilter" name="status" onchange="applyFilters()"
                                     class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                    <option value="all"                                                        <?php echo $selectedStatus == 'all' ? 'selected' : ''; ?>>All Status</option>
-                                    <option value="present"                                                            <?php echo $selectedStatus == 'present' ? 'selected' : ''; ?>>Present</option>
-                                    <option value="late"                                                         <?php echo $selectedStatus == 'late' ? 'selected' : ''; ?>>Late</option>
-                                    <option value="absent"                                                           <?php echo $selectedStatus == 'absent' ? 'selected' : ''; ?>>Absent</option>
-                                    <option value="excused"                                                            <?php echo $selectedStatus == 'excused' ? 'selected' : ''; ?>>Excused</option>
+                                    <option value="all"                                                                                                               <?php echo $selectedStatus == 'all' ? 'selected' : ''; ?>>All Status</option>
+                                    <option value="present"                                                                                                                       <?php echo $selectedStatus == 'present' ? 'selected' : ''; ?>>Present</option>
+                                    <option value="late"                                                                                                                 <?php echo $selectedStatus == 'late' ? 'selected' : ''; ?>>Late</option>
+                                    <option value="absent"                                                                                                                     <?php echo $selectedStatus == 'absent' ? 'selected' : ''; ?>>Absent</option>
+                                    <option value="excused"                                                                                                                       <?php echo $selectedStatus == 'excused' ? 'selected' : ''; ?>>Excused</option>
                                 </select>
                             </div>
                         </div>
@@ -336,7 +336,7 @@
                                             <?php echo htmlspecialchars($record['location']); ?>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium                                                                                                                                 <?php echo $statusClass; ?>">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium                                                                                                                                                                                                                                                                 <?php echo $statusClass; ?>">
                                                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <?php echo $statusIcon; ?>
                                                 </svg>
@@ -434,8 +434,8 @@
                                     </span>
                                 </div>
                                 <div class="text-sm text-gray-600">
-                                    <p><span class="font-medium">Activity:</span>                                                                                  <?php echo htmlspecialchars($record['event_title']); ?></p>
-                                    <p><span class="font-medium">Location:</span>                                                                                  <?php echo htmlspecialchars($record['location']); ?></p>
+                                    <p><span class="font-medium">Activity:</span>                                                                                                                                                                   <?php echo htmlspecialchars($record['event_title']); ?></p>
+                                    <p><span class="font-medium">Location:</span>                                                                                                                                                                   <?php echo htmlspecialchars($record['location']); ?></p>
                                     <?php if ($hoursWorked): ?>
                                     <p><span class="font-medium">Hours:</span><?php echo $hoursWorked; ?></p>
                                     <?php endif; ?>

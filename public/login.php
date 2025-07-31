@@ -3,7 +3,18 @@
 
     // Redirect if already logged in
     if (isset($_SESSION['user_id'])) {
-        $redirect_url = $_SESSION['user_role'] === 'admin' ? 'dashboard/admin.php' : 'dashboard/resident.php';
+        switch ($_SESSION['user_role']) {
+            case 'superadmin':
+                $redirect_url = 'dashboard/superadmin/index.php';
+                break;
+            case 'admin':
+                $redirect_url = 'dashboard/admin/index.php';
+                break;
+            case 'resident':
+            default:
+                $redirect_url = 'dashboard/resident/index.php';
+                break;
+        }
         header("Location: $redirect_url");
         exit;
     }

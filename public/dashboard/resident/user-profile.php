@@ -53,7 +53,7 @@
     }
 
     // Get user data
-    $user = $userModel->findById($_SESSION['user_id']);
+    $user = $userModel->findByIdWithLocation($_SESSION['user_id']);
 
     if (! $user) {
         // User not found, logout and redirect
@@ -71,10 +71,10 @@
     $nationalId  = htmlspecialchars($user['national_id']);
     $dateOfBirth = $user['date_of_birth'];
     $gender      = $user['gender'];
-    $province    = htmlspecialchars($user['province']);
-    $district    = htmlspecialchars($user['district']);
-    $sector      = htmlspecialchars($user['sector']);
-    $cell        = htmlspecialchars($user['cell']);
+    $province    = htmlspecialchars($user['province_name']);
+    $district    = htmlspecialchars($user['district_name']);
+    $sector      = htmlspecialchars($user['sector_name']);
+    $cell        = htmlspecialchars($user['cell_name']);
     $location    = $cell . ', ' . $sector . ', ' . $district;
     $initials    = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
@@ -283,7 +283,7 @@
                                 <p class="text-sm font-medium"><?php echo htmlspecialchars($message); ?></p>
                             </div>
                             <div class="ml-auto pl-3">
-                                <button onclick="hideNotification()" class="inline-flex                                                                                                                                                                               <?php echo $messageType === 'success' ? 'text-green-400 hover:text-green-600' : 'text-red-400 hover:text-red-600'; ?>">
+                                <button onclick="hideNotification()" class="inline-flex                                                                                                                                                                                                                                                                      <?php echo $messageType === 'success' ? 'text-green-400 hover:text-green-600' : 'text-red-400 hover:text-red-600'; ?>">
                                     <span class="sr-only">Dismiss</span>
                                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
@@ -318,10 +318,10 @@
                                 </div>
                                 <div class="text-center md:text-left flex-1">
                                     <h1 class="text-2xl font-bold"><?php echo $fullName; ?></h1>
-                                    <p class="text-primary-100 mb-2">Resident ID:                                                                                                                                                                   <?php echo $nationalId; ?></p>
+                                    <p class="text-primary-100 mb-2">Resident ID:                                                                                                                                                                                                                                                    <?php echo $nationalId; ?></p>
                                     <div class="flex flex-wrap justify-center md:justify-start gap-4 text-sm">
-                                        <span class="bg-white/20 px-3 py-1 rounded-full">Sector:                                                                                                                                                                                                 <?php echo $sector; ?></span>
-                                        <span class="bg-white/20 px-3 py-1 rounded-full">Cell:                                                                                                                                                                                             <?php echo $cell; ?></span>
+                                        <span class="bg-white/20 px-3 py-1 rounded-full">Sector:                                                                                                                                                                                                                                                                                                 <?php echo $sector; ?></span>
+                                        <span class="bg-white/20 px-3 py-1 rounded-full">Cell:                                                                                                                                                                                                                                                                                           <?php echo $cell; ?></span>
                                         <span class="bg-success-500 px-3 py-1 rounded-full"><?php echo ucfirst($user['status']); ?> Member</span>
                                     </div>
                                 </div>
@@ -389,8 +389,8 @@
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
                                         <select name="gender" required
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                            <option value="male"                                                                                                                                 <?php echo $gender === 'male' ? 'selected' : ''; ?>>Male</option>
-                                            <option value="female"                                                                                                                                     <?php echo $gender === 'female' ? 'selected' : ''; ?>>Female</option>
+                                            <option value="male"                                                                                                                                                                                                 <?php echo $gender === 'male' ? 'selected' : ''; ?>>Male</option>
+                                            <option value="female"                                                                                                                                                                                                       <?php echo $gender === 'female' ? 'selected' : ''; ?>>Female</option>
                                         </select>
                                     </div>
                                     <div>
@@ -398,10 +398,10 @@
                                         <select name="marital_status"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                             <option value="">Select Status</option>
-                                            <option value="single"                                                                                                                                     <?php echo($user['marital_status'] ?? '') === 'single' ? 'selected' : ''; ?>>Single</option>
-                                            <option value="married"                                                                                                                                       <?php echo($user['marital_status'] ?? '') === 'married' ? 'selected' : ''; ?>>Married</option>
-                                            <option value="divorced"                                                                                                                                         <?php echo($user['marital_status'] ?? '') === 'divorced' ? 'selected' : ''; ?>>Divorced</option>
-                                            <option value="widowed"                                                                                                                                       <?php echo($user['marital_status'] ?? '') === 'widowed' ? 'selected' : ''; ?>>Widowed</option>
+                                            <option value="single"                                                                                                                                                                                                       <?php echo($user['marital_status'] ?? '') === 'single' ? 'selected' : ''; ?>>Single</option>
+                                            <option value="married"                                                                                                                                                                                                          <?php echo($user['marital_status'] ?? '') === 'married' ? 'selected' : ''; ?>>Married</option>
+                                            <option value="divorced"                                                                                                                                                                                                             <?php echo($user['marital_status'] ?? '') === 'divorced' ? 'selected' : ''; ?>>Divorced</option>
+                                            <option value="widowed"                                                                                                                                                                                                          <?php echo($user['marital_status'] ?? '') === 'widowed' ? 'selected' : ''; ?>>Widowed</option>
                                         </select>
                                     </div>
                                 </div>
@@ -443,20 +443,20 @@
                                             <label class="block text-sm font-medium text-gray-700 mb-2">Province</label>
                                             <select name="province" required
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                                <option value="Kigali"                                                                                                                                             <?php echo $province === 'Kigali' ? 'selected' : ''; ?>>Kigali</option>
-                                                <option value="Northern Province"                                                                                                                                                                   <?php echo $province === 'Northern Province' ? 'selected' : ''; ?>>Northern Province</option>
-                                                <option value="Southern Province"                                                                                                                                                                   <?php echo $province === 'Southern Province' ? 'selected' : ''; ?>>Southern Province</option>
-                                                <option value="Eastern Province"                                                                                                                                                                 <?php echo $province === 'Eastern Province' ? 'selected' : ''; ?>>Eastern Province</option>
-                                                <option value="Western Province"                                                                                                                                                                 <?php echo $province === 'Western Province' ? 'selected' : ''; ?>>Western Province</option>
+                                                <option value="Kigali"                                                                                                                                                                                                                   <?php echo $province === 'Kigali' ? 'selected' : ''; ?>>Kigali</option>
+                                                <option value="Northern Province"                                                                                                                                                                                                                                                    <?php echo $province === 'Northern Province' ? 'selected' : ''; ?>>Northern Province</option>
+                                                <option value="Southern Province"                                                                                                                                                                                                                                                    <?php echo $province === 'Southern Province' ? 'selected' : ''; ?>>Southern Province</option>
+                                                <option value="Eastern Province"                                                                                                                                                                                                                                                 <?php echo $province === 'Eastern Province' ? 'selected' : ''; ?>>Eastern Province</option>
+                                                <option value="Western Province"                                                                                                                                                                                                                                                 <?php echo $province === 'Western Province' ? 'selected' : ''; ?>>Western Province</option>
                                             </select>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-2">District</label>
                                             <select name="district" required
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                                <option value="Nyarugenge"                                                                                                                                                     <?php echo $district === 'Nyarugenge' ? 'selected' : ''; ?>>Nyarugenge</option>
-                                                <option value="Gasabo"                                                                                                                                             <?php echo $district === 'Gasabo' ? 'selected' : ''; ?>>Gasabo</option>
-                                                <option value="Kicukiro"                                                                                                                                                 <?php echo $district === 'Kicukiro' ? 'selected' : ''; ?>>Kicukiro</option>
+                                                <option value="Nyarugenge"                                                                                                                                                                                                                               <?php echo $district === 'Nyarugenge' ? 'selected' : ''; ?>>Nyarugenge</option>
+                                                <option value="Gasabo"                                                                                                                                                                                                                   <?php echo $district === 'Gasabo' ? 'selected' : ''; ?>>Gasabo</option>
+                                                <option value="Kicukiro"                                                                                                                                                                                                                         <?php echo $district === 'Kicukiro' ? 'selected' : ''; ?>>Kicukiro</option>
                                             </select>
                                         </div>
                                         <div>
@@ -549,26 +549,26 @@
                                             <label class="block text-sm font-medium text-gray-700 mb-2">Language</label>
                                             <select name="language"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                                <option value="en"                                                                                                                                     <?php echo $preferences['language'] === 'en' ? 'selected' : ''; ?>>English</option>
-                                                <option value="rw"                                                                                                                                     <?php echo $preferences['language'] === 'rw' ? 'selected' : ''; ?>>Kinyarwanda</option>
-                                                <option value="fr"                                                                                                                                     <?php echo $preferences['language'] === 'fr' ? 'selected' : ''; ?>>French</option>
+                                                <option value="en"                                                                                                                                                                                                       <?php echo $preferences['language'] === 'en' ? 'selected' : ''; ?>>English</option>
+                                                <option value="rw"                                                                                                                                                                                                       <?php echo $preferences['language'] === 'rw' ? 'selected' : ''; ?>>Kinyarwanda</option>
+                                                <option value="fr"                                                                                                                                                                                                       <?php echo $preferences['language'] === 'fr' ? 'selected' : ''; ?>>French</option>
                                             </select>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-2">Time Zone</label>
                                             <select name="timezone"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                                <option value="Africa/Kigali"                                                                              <?php echo $preferences['timezone'] === 'Africa/Kigali' ? 'selected' : ''; ?>>Africa/Kigali (CAT)</option>
-                                                <option value="UTC"                                                                    <?php echo $preferences['timezone'] === 'UTC' ? 'selected' : ''; ?>>UTC</option>
+                                                <option value="Africa/Kigali"                                                                                                                                                           <?php echo $preferences['timezone'] === 'Africa/Kigali' ? 'selected' : ''; ?>>Africa/Kigali (CAT)</option>
+                                                <option value="UTC"                                                                                                                                       <?php echo $preferences['timezone'] === 'UTC' ? 'selected' : ''; ?>>UTC</option>
                                             </select>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
                                             <select name="date_format"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                                <option value="dd/mm/yyyy"                                                                           <?php echo $preferences['date_format'] === 'dd/mm/yyyy' ? 'selected' : ''; ?>>DD/MM/YYYY</option>
-                                                <option value="mm/dd/yyyy"                                                                           <?php echo $preferences['date_format'] === 'mm/dd/yyyy' ? 'selected' : ''; ?>>MM/DD/YYYY</option>
-                                                <option value="yyyy-mm-dd"                                                                           <?php echo $preferences['date_format'] === 'yyyy-mm-dd' ? 'selected' : ''; ?>>YYYY-MM-DD</option>
+                                                <option value="dd/mm/yyyy"                                                                                                                                                     <?php echo $preferences['date_format'] === 'dd/mm/yyyy' ? 'selected' : ''; ?>>DD/MM/YYYY</option>
+                                                <option value="mm/dd/yyyy"                                                                                                                                                     <?php echo $preferences['date_format'] === 'mm/dd/yyyy' ? 'selected' : ''; ?>>MM/DD/YYYY</option>
+                                                <option value="yyyy-mm-dd"                                                                                                                                                     <?php echo $preferences['date_format'] === 'yyyy-mm-dd' ? 'selected' : ''; ?>>YYYY-MM-DD</option>
                                             </select>
                                         </div>
                                     </div>

@@ -127,7 +127,30 @@ class Database
     {
         return $this->getConnection()->affected_rows;
     }
+
+    /**
+     * Get PDO connection for classes that require PDO
+     */
+    public function getPDOConnection()
+    {
+        $dsn = "mysql:host={$this->host};dbname={$this->database};charset=utf8mb4";
+
+        try {
+            $pdo = new PDO($dsn, $this->username, $this->password, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ]);
+
+            return $pdo;
+        } catch (PDOException $e) {
+            die("PDO Connection failed: " . $e->getMessage());
+        }
+    }
 }
 
 // Global database instance
 $db = new Database();
+
+// Global PDO instance for classes that require PDO
+$pdo = $db->getPDOConnection();

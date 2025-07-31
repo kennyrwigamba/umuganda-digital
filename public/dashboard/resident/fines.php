@@ -26,7 +26,7 @@
 
     // Get user data
     $userModel = new User();
-    $user      = $userModel->findById($_SESSION['user_id']);
+    $user      = $userModel->findByIdWithLocation($_SESSION['user_id']);
 
     if (! $user) {
         // User not found, logout and redirect
@@ -42,7 +42,7 @@
     $email      = htmlspecialchars($user['email']);
     $phone      = htmlspecialchars($user['phone']);
     $nationalId = htmlspecialchars($user['national_id']);
-    $location   = htmlspecialchars($user['cell'] . ', ' . $user['sector'] . ', ' . $user['district']);
+    $location   = htmlspecialchars($user['cell_name'] . ', ' . $user['sector_name'] . ', ' . $user['district_name']);
     $initials   = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
     // Initialize models
@@ -309,30 +309,30 @@
         $statusText  = $isOverdue ? 'OVERDUE' : 'DUE SOON';
         $buttonClass = $isOverdue ? 'from-danger-600 to-red-600 hover:from-danger-700 hover:to-red-700' : 'from-warning-600 to-amber-600 hover:from-warning-700 hover:to-amber-700';
     ?>
-		                            <div class="bg-gradient-to-r<?php echo $statusClass; ?> rounded-lg p-4">
-		                                <div class="flex items-center justify-between">
-		                                    <div class="flex-1">
-		                                        <div class="flex items-center space-x-2 mb-2">
-		                                            <span class="<?php echo $statusBadge; ?> text-xs font-medium px-2 py-1 rounded-full">
-		                                                <?php echo $statusText; ?>
-		                                            </span>
-		                                            <span class="text-sm text-gray-600"><?php echo $eventDate->format('M j, Y'); ?></span>
-		                                        </div>
-		                                        <h4 class="font-medium text-gray-900 mb-1">
-		                                            <?php echo htmlspecialchars($fine['event_title']); ?>
-		                                        </h4>
-		                                        <p class="text-sm text-gray-600 mb-2">
-		                                            <?php echo htmlspecialchars($fine['reason'] ?? 'Missed mandatory community work session'); ?>
-		                                        </p>
-		                                        <div class="flex items-center space-x-4 text-sm">
-		                                            <span class="text-gray-500">Fine Amount:
-		                                                <span class="font-medium		                                                                        	                                                                         <?php echo $isOverdue ? 'text-danger-600' : 'text-warning-600'; ?>">
-		                                                    <?php echo number_format($fine['amount']); ?> RWF
-		                                                </span>
-		                                            </span>
-		                                            <?php if ($dueDate): ?>
-		                                            <span class="text-gray-500">Due:<?php echo $dueDate->format('M j, Y'); ?></span>
-		                                            <?php endif; ?>
+			                            <div class="bg-gradient-to-r<?php echo $statusClass; ?> rounded-lg p-4">
+			                                <div class="flex items-center justify-between">
+			                                    <div class="flex-1">
+			                                        <div class="flex items-center space-x-2 mb-2">
+			                                            <span class="<?php echo $statusBadge; ?> text-xs font-medium px-2 py-1 rounded-full">
+			                                                <?php echo $statusText; ?>
+			                                            </span>
+			                                            <span class="text-sm text-gray-600"><?php echo $eventDate->format('M j, Y'); ?></span>
+			                                        </div>
+			                                        <h4 class="font-medium text-gray-900 mb-1">
+			                                            <?php echo htmlspecialchars($fine['event_title']); ?>
+			                                        </h4>
+			                                        <p class="text-sm text-gray-600 mb-2">
+			                                            <?php echo htmlspecialchars($fine['reason'] ?? 'Missed mandatory community work session'); ?>
+			                                        </p>
+			                                        <div class="flex items-center space-x-4 text-sm">
+			                                            <span class="text-gray-500">Fine Amount:
+			                                                <span class="font-medium			                                                                        		                                                                        	                                                                         <?php echo $isOverdue ? 'text-danger-600' : 'text-warning-600'; ?>">
+			                                                    <?php echo number_format($fine['amount']); ?> RWF
+			                                                </span>
+			                                            </span>
+			                                            <?php if ($dueDate): ?>
+			                                            <span class="text-gray-500">Due:<?php echo $dueDate->format('M j, Y'); ?></span>
+			                                            <?php endif; ?>
 <?php if ($isOverdue): ?>
                                             <span class="text-danger-600 font-medium"><?php echo $daysOverdue; ?> day<?php echo $daysOverdue != 1 ? 's' : ''; ?> overdue</span>
                                             <?php elseif ($daysUntilDue > 0): ?>
@@ -342,7 +342,7 @@
                                     </div>
                                     <div class="ml-4">
                                         <button onclick="payFine('<?php echo $fine['id']; ?>', '<?php echo $fine['amount']; ?>')"
-                                            class="bg-gradient-to-r                                                                                                                                       <?php echo $buttonClass; ?> text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl">
+                                            class="bg-gradient-to-r                                                                                                                                                                                                          <?php echo $buttonClass; ?> text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl">
                                             Pay Now
                                         </button>
                                     </div>
@@ -380,7 +380,7 @@
                                 <div class="flex space-x-2">
                                     <select id="yearFilter" onchange="applyYearFilter()"
                                         class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                        <option value="all"                                                                                                                       <?php echo $selectedYear == 'all' ? 'selected' : ''; ?>>All Years</option>
+                                        <option value="all"                                                                                                                                                                                  <?php echo $selectedYear == 'all' ? 'selected' : ''; ?>>All Years</option>
                                         <?php foreach ($availableYears as $year): ?>
                                         <option value="<?php echo $year; ?>"<?php echo $year == $selectedYear ? 'selected' : ''; ?>>
                                             <?php echo $year; ?>
@@ -445,15 +445,15 @@
                 $statusText  = ucfirst($fine['status']);
         }
     ?>
-		                                    <tr class="hover:bg-gray-50 transition-colors">
-		                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-		                                            <?php echo $fine['paid_date'] ? (new DateTime($fine['paid_date']))->format('M j, Y') : $fineDate->format('M j, Y'); ?>
-		                                        </td>
-		                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-		                                            <?php echo htmlspecialchars($fine['event_title'] ?? 'Fine'); ?>
+			                                    <tr class="hover:bg-gray-50 transition-colors">
+			                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+			                                            <?php echo $fine['paid_date'] ? (new DateTime($fine['paid_date']))->format('M j, Y') : $fineDate->format('M j, Y'); ?>
+			                                        </td>
+			                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+			                                            <?php echo htmlspecialchars($fine['event_title'] ?? 'Fine'); ?>
 <?php if ($fine['reason']): ?>
-		                                                <br><span class="text-xs text-gray-400"><?php echo htmlspecialchars($fine['reason']); ?></span>
-		                                            <?php endif; ?>
+			                                                <br><span class="text-xs text-gray-400"><?php echo htmlspecialchars($fine['reason']); ?></span>
+			                                            <?php endif; ?>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                                             <?php echo number_format($fine['amount']); ?> RWF
@@ -462,7 +462,7 @@
                                             <?php echo $fine['payment_method'] ?: '-'; ?>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium                                                                                                                                                                                                                                                                 <?php echo $statusClass; ?>">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium                                                                                                                                                                                                                                                                                                                                                                                                 <?php echo $statusClass; ?>">
                                                 <?php echo $statusText; ?>
                                             </span>
                                         </td>
@@ -524,20 +524,20 @@
                 $cardClass   = 'bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200';
         }
     ?>
-		                            <div class="<?php echo $cardClass; ?> rounded-lg p-4">
-		                                <div class="flex items-center justify-between mb-2">
-		                                    <h4 class="font-medium text-gray-900">
-		                                        <?php echo $fine['paid_date'] ? (new DateTime($fine['paid_date']))->format('M j, Y') : $fineDate->format('M j, Y'); ?>
-		                                    </h4>
-		                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium		                                                                                                                        	                                                                                                                         <?php echo $statusClass; ?>">
-		                                        <?php echo $statusText; ?>
-		                                    </span>
-		                                </div>
-		                                <div class="text-sm text-gray-600 space-y-1">
-		                                    <p><span class="font-medium">Description:</span>		                                                                                    	                                                                                     <?php echo htmlspecialchars($fine['event_title'] ?? 'Fine'); ?></p>
-		                                    <?php if ($fine['reason']): ?>
-		                                    <p><span class="font-medium">Reason:</span><?php echo htmlspecialchars($fine['reason']); ?></p>
-		                                    <?php endif; ?>
+			                            <div class="<?php echo $cardClass; ?> rounded-lg p-4">
+			                                <div class="flex items-center justify-between mb-2">
+			                                    <h4 class="font-medium text-gray-900">
+			                                        <?php echo $fine['paid_date'] ? (new DateTime($fine['paid_date']))->format('M j, Y') : $fineDate->format('M j, Y'); ?>
+			                                    </h4>
+			                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium			                                                                                                                        		                                                                                                                        	                                                                                                                         <?php echo $statusClass; ?>">
+			                                        <?php echo $statusText; ?>
+			                                    </span>
+			                                </div>
+			                                <div class="text-sm text-gray-600 space-y-1">
+			                                    <p><span class="font-medium">Description:</span>			                                                                                    		                                                                                    	                                                                                     <?php echo htmlspecialchars($fine['event_title'] ?? 'Fine'); ?></p>
+			                                    <?php if ($fine['reason']): ?>
+			                                    <p><span class="font-medium">Reason:</span><?php echo htmlspecialchars($fine['reason']); ?></p>
+			                                    <?php endif; ?>
                                     <p><span class="font-medium">Amount:</span><?php echo number_format($fine['amount']); ?> RWF</p>
                                     <?php if ($fine['payment_method']): ?>
                                     <p><span class="font-medium">Method:</span><?php echo htmlspecialchars($fine['payment_method']); ?></p>
@@ -823,7 +823,7 @@
 
         function payAllFines() {
             // Get all outstanding fine IDs and total amount
-            const outstandingFines =                                                                         <?php echo json_encode($outstandingFines); ?>;
+            const outstandingFines =                                                                                                             <?php echo json_encode($outstandingFines); ?>;
 
             if (outstandingFines.length === 0) {
                 showNotification('No outstanding fines to pay', 'error');

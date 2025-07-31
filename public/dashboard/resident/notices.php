@@ -25,7 +25,7 @@
 
     // Get user data
     $userModel = new User();
-    $user      = $userModel->findById($_SESSION['user_id']);
+    $user      = $userModel->findByIdWithLocation($_SESSION['user_id']);
 
     if (! $user) {
         // User not found, logout and redirect
@@ -41,7 +41,7 @@
     $email      = htmlspecialchars($user['email']);
     $phone      = htmlspecialchars($user['phone']);
     $nationalId = htmlspecialchars($user['national_id']);
-    $location   = htmlspecialchars($user['cell'] . ', ' . $user['sector'] . ', ' . $user['district']);
+    $location   = htmlspecialchars($user['cell_name'] . ', ' . $user['sector_name'] . ', ' . $user['district_name']);
     $initials   = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
     // Initialize models
@@ -51,20 +51,20 @@
     $selectedType = $_GET['type'] ?? 'all';
     $searchQuery  = $_GET['search'] ?? '';
 
-    // Get notices for this user based on their location
+    // Get notices for this user based on their location IDs
     $userLocation = [
-        'cell'     => $user['cell'],
-        'sector'   => $user['sector'],
-        'district' => $user['district'],
-        'role'     => $user['role'],
+        'cell_id'     => $user['cell_id'],
+        'sector_id'   => $user['sector_id'],
+        'district_id' => $user['district_id'],
+        'role'        => $user['role'],
     ];
 
-    // Get all notices for the user (we'll filter in frontend for better UX)
-    $allNotices = $noticeModel->getNoticesForUser(
+    // Get all notices for the user using the new ID-based method
+    $allNotices = $noticeModel->getNoticesForUserByLocationIds(
         $_SESSION['user_id'],
-        $user['cell'],
-        $user['sector'],
-        $user['district'],
+        $user['cell_id'],
+        $user['sector_id'],
+        $user['district_id'],
         'resident',
         50// Get more notices for filtering
     );
@@ -87,11 +87,11 @@
     }
 
     // Get unread notices count
-    $unreadCount = $noticeModel->getUnreadNoticesCount(
+    $unreadCount = $noticeModel->getUnreadNoticesCountByLocationIds(
         $_SESSION['user_id'],
-        $user['cell'],
-        $user['sector'],
-        $user['district'],
+        $user['cell_id'],
+        $user['sector_id'],
+        $user['district_id'],
         'resident'
     );
 
@@ -134,23 +134,23 @@
                         <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
                             <div class="flex flex-wrap gap-2">
                                 <button onclick="filterNotices('all')"
-                                    class="filter-btn                                                      <?php echo $selectedType === 'all' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                                    class="filter-btn                                                                                                           <?php echo $selectedType === 'all' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
                                     All Notices
                                 </button>
                                 <button onclick="filterNotices('urgent')"
-                                    class="filter-btn                                                      <?php echo $selectedType === 'urgent' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-danger-50 hover:text-danger-700 hover:border-danger-200">
+                                    class="filter-btn                                                                                                           <?php echo $selectedType === 'urgent' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-danger-50 hover:text-danger-700 hover:border-danger-200">
                                     Urgent
                                 </button>
                                 <button onclick="filterNotices('schedule')"
-                                    class="filter-btn                                                      <?php echo $selectedType === 'schedule' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-warning-50 hover:text-warning-700 hover:border-warning-200">
+                                    class="filter-btn                                                                                                           <?php echo $selectedType === 'schedule' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-warning-50 hover:text-warning-700 hover:border-warning-200">
                                     Schedule Changes
                                 </button>
                                 <button onclick="filterNotices('general')"
-                                    class="filter-btn                                                      <?php echo $selectedType === 'general' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-200">
+                                    class="filter-btn                                                                                                           <?php echo $selectedType === 'general' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-200">
                                     General Info
                                 </button>
                                 <button onclick="filterNotices('events')"
-                                    class="filter-btn                                                      <?php echo $selectedType === 'events' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-success-50 hover:text-success-700 hover:border-success-200">
+                                    class="filter-btn                                                                                                           <?php echo $selectedType === 'events' ? 'active bg-primary-100 text-primary-700 border-primary-200' : 'bg-gray-100 text-gray-700 border-gray-200'; ?> px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-success-50 hover:text-success-700 hover:border-success-200">
                                     Events
                                 </button>
                             </div>
@@ -184,23 +184,23 @@
         $publishDate = new DateTime($urgentNotice['publish_date']);
         $timeAgo     = getTimeAgo($urgentNotice['publish_date']);
     ?>
-	                        <div class="bg-gradient-to-r from-danger-50 to-red-50 border-l-4 border-danger-500 rounded-xl shadow-lg p-6">
-	                            <div class="flex items-start">
-	                                <div class="flex-shrink-0">
-	                                    <svg class="h-6 w-6 text-danger-500" fill="currentColor" viewBox="0 0 20 20">
-	                                        <path fill-rule="evenodd"
-	                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-	                                            clip-rule="evenodd"></path>
-	                                    </svg>
-	                                </div>
-	                                <div class="ml-3 flex-1">
-	                                    <h3 class="text-lg font-medium text-danger-800"><?php echo htmlspecialchars($urgentNotice['title']); ?></h3>
-	                                    <p class="text-sm text-danger-700 mt-1"><?php echo htmlspecialchars($urgentNotice['content']); ?></p>
-	                                    <p class="text-xs text-danger-600 mt-2">
-	                                        Posted	                                               <?php echo $timeAgo; ?> •
-	                                        <?php echo ucfirst($urgentNotice['priority']); ?> Priority
-	                                        <?php if ($urgentNotice['creator_first_name']): ?>
-	                                        • By <?php echo htmlspecialchars($urgentNotice['creator_first_name'] . ' ' . $urgentNotice['creator_last_name']); ?>
+		                        <div class="bg-gradient-to-r from-danger-50 to-red-50 border-l-4 border-danger-500 rounded-xl shadow-lg p-6">
+		                            <div class="flex items-start">
+		                                <div class="flex-shrink-0">
+		                                    <svg class="h-6 w-6 text-danger-500" fill="currentColor" viewBox="0 0 20 20">
+		                                        <path fill-rule="evenodd"
+		                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+		                                            clip-rule="evenodd"></path>
+		                                    </svg>
+		                                </div>
+		                                <div class="ml-3 flex-1">
+		                                    <h3 class="text-lg font-medium text-danger-800"><?php echo htmlspecialchars($urgentNotice['title']); ?></h3>
+		                                    <p class="text-sm text-danger-700 mt-1"><?php echo htmlspecialchars($urgentNotice['content']); ?></p>
+		                                    <p class="text-xs text-danger-600 mt-2">
+		                                        Posted		                                              	                                               <?php echo $timeAgo; ?> •
+		                                        <?php echo ucfirst($urgentNotice['priority']); ?> Priority
+		                                        <?php if ($urgentNotice['creator_first_name']): ?>
+		                                        • By<?php echo htmlspecialchars($urgentNotice['creator_first_name'] . ' ' . $urgentNotice['creator_last_name']); ?>
 <?php endif; ?>
                                     </p>
                                 </div>
@@ -255,22 +255,22 @@
         // Check if notice is new (published within last 3 days)
         $isNew = (time() - strtotime($notice['publish_date'])) < (3 * 24 * 60 * 60);
     ?>
-	                            <div class="notice-item bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-200"
-	                                 data-category="<?php echo htmlspecialchars($notice['type']); ?>"
-	                                 data-priority="<?php echo htmlspecialchars($notice['priority']); ?>"
-	                                 data-notice-id="<?php echo $notice['id']; ?>">
-	                                <div class="flex items-start justify-between">
-	                                    <div class="flex-1">
-	                                        <div class="flex items-center space-x-2 mb-3">
-	                                            <span class="<?php echo $typeClass; ?> text-xs font-medium px-2.5 py-0.5 rounded-full">
-	                                                <?php echo $typeBadge; ?>
-	                                            </span>
-	                                            <span class="text-sm text-gray-500">
-	                                                <?php echo $publishDate->format('M j, Y • g:i A'); ?>
-	                                            </span>
-	                                            <?php if ($isNew): ?>
-	                                            <span class="bg-primary-100 text-primary-800 text-xs font-medium px-2 py-0.5 rounded-full">NEW</span>
-	                                            <?php endif; ?>
+		                            <div class="notice-item bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-200"
+		                                 data-category="<?php echo htmlspecialchars($notice['type']); ?>"
+		                                 data-priority="<?php echo htmlspecialchars($notice['priority']); ?>"
+		                                 data-notice-id="<?php echo $notice['id']; ?>">
+		                                <div class="flex items-start justify-between">
+		                                    <div class="flex-1">
+		                                        <div class="flex items-center space-x-2 mb-3">
+		                                            <span class="<?php echo $typeClass; ?> text-xs font-medium px-2.5 py-0.5 rounded-full">
+		                                                <?php echo $typeBadge; ?>
+		                                            </span>
+		                                            <span class="text-sm text-gray-500">
+		                                                <?php echo $publishDate->format('M j, Y • g:i A'); ?>
+		                                            </span>
+		                                            <?php if ($isNew): ?>
+		                                            <span class="bg-primary-100 text-primary-800 text-xs font-medium px-2 py-0.5 rounded-full">NEW</span>
+		                                            <?php endif; ?>
                                         </div>
                                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                                             <?php echo htmlspecialchars($notice['title']); ?>
@@ -287,7 +287,7 @@
                                                         d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4V7a2 2 0 012-2h4a2 2 0 012 2v4M8 15v4a2 2 0 002 2h4a2 2 0 002-2v-4">
                                                     </path>
                                                 </svg>
-                                                Posted                                                       <?php echo $timeAgo; ?>
+                                                Posted                                                                                                             <?php echo $timeAgo; ?>
                                             </span>
                                             <?php if ($notice['creator_first_name']): ?>
                                             <span class="flex items-center">
@@ -304,7 +304,7 @@
                                         <?php if ($notice['expiry_date']): ?>
                                         <div class="mt-2">
                                             <span class="text-xs text-gray-500">
-                                                Expires:                                                         <?php echo(new DateTime($notice['expiry_date']))->format('M j, Y'); ?>
+                                                Expires:                                                                                                                 <?php echo(new DateTime($notice['expiry_date']))->format('M j, Y'); ?>
                                             </span>
                                         </div>
                                         <?php endif; ?>
