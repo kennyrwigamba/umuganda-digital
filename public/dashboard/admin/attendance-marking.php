@@ -367,7 +367,7 @@
                                 <?php if ($selectedEvent): ?>
                                     Mark attendance for <strong><?php echo htmlspecialchars($selectedEvent['title']); ?></strong> in<?php echo htmlspecialchars($sectorName); ?> Sector
                                     <br><span class="text-sm text-gray-500">
-                                        📅                                                                                                                                     <?php echo date('F j, Y', strtotime($selectedEvent['event_date'])); ?> at<?php echo date('g:i A', strtotime($selectedEvent['start_time'])); ?>
+                                        📅                                                                                                                                                                                 <?php echo date('F j, Y', strtotime($selectedEvent['event_date'])); ?> at<?php echo date('g:i A', strtotime($selectedEvent['start_time'])); ?>
                                         | 📍<?php echo htmlspecialchars($selectedEvent['location']); ?>
                                         | Status: <span class="px-2 py-1 text-xs rounded-full<?php echo $selectedEvent['status'] === 'completed' ? 'bg-green-100 text-green-800' : ($selectedEvent['status'] === 'ongoing' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'); ?>">
                                             <?php echo ucfirst($selectedEvent['status']); ?>
@@ -460,7 +460,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-gray-700">Attendance Progress</span>
-                        <span class="text-sm text-gray-600" id="progressText">0 of                                                                                                                                                                                                                                                                                                                                                                                                                           <?php echo count($residents); ?> marked</span>
+                        <span class="text-sm text-gray-600" id="progressText">0 of                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <?php echo count($residents); ?> marked</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2">
                         <div class="bg-primary-600 h-2 rounded-full transition-all duration-300" id="progressBar" style="width: 0%"></div>
@@ -621,7 +621,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <input type="checkbox" class="resident-checkbox w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                                     data-user-id="<?php echo $resident['user_id']; ?>"
-                                                    onchange="updateProgress()"                                                                                                                                                                                                                                                                                                                                                                                                            <?php echo $isMarked ? 'checked' : ''; ?>>
+                                                    onchange="updateProgress()"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           <?php echo $isMarked ? 'checked' : ''; ?>>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center">
@@ -732,20 +732,20 @@
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.05); opacity: 0.8; }
         }
-        
+
         .animate-pulse {
             animation: pulse 1.5s ease-in-out infinite;
         }
-        
+
         .qr-scan-success {
             animation: successFlash 0.5s ease-in-out;
         }
-        
+
         @keyframes successFlash {
             0% { background-color: rgb(34, 197, 94); }
             100% { background-color: rgb(240, 253, 244); }
         }
-        
+
         /* QR Reader styling */
         #qrReader {
             border: 2px dashed #d1d5db;
@@ -753,43 +753,43 @@
             position: relative;
             z-index: 10;
         }
-        
+
         #qrReader.scanning {
             border-color: #10b981;
             background-color: #f0fdf4;
         }
-        
+
         /* QR Scanner Section */
         #qrScannerSection {
             position: relative;
             z-index: 20;
         }
-        
+
         /* Ensure main content doesn't overlap with sidebar */
         #main-content {
             position: relative;
             z-index: 1;
         }
-        
+
         /* Recent scans scroll styling */
         #recentScans::-webkit-scrollbar {
             width: 4px;
         }
-        
+
         #recentScans::-webkit-scrollbar-track {
             background: #f1f5f9;
             border-radius: 2px;
         }
-        
+
         #recentScans::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 2px;
         }
-        
+
         #recentScans::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        
+
         /* Keyboard shortcut styling */
         kbd {
             font-family: monospace;
@@ -807,7 +807,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateProgress();
-            
+
             // Add keyboard shortcuts
             document.addEventListener('keydown', function(event) {
                 // Only if not typing in an input field
@@ -1000,7 +1000,7 @@
                 .then(stream => {
                     // Stop the test stream immediately
                     stream.getTracks().forEach(track => track.stop());
-                    
+
                     // Now start the actual QR scanner
                     try {
                         if (qrCodeScanner) {
@@ -1024,13 +1024,13 @@
                         startBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Scanner Active';
                         stopBtn.disabled = false;
                         stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
-                        
+
                         showScanMessage('📷 Scanner ready! Point camera at resident QR codes', 'success');
-                        
+
                     } catch (error) {
                         console.error('QR Scanner Error:', error);
                         showScanMessage('❌ Failed to initialize QR scanner: ' + error.message, 'error');
-                        
+
                         // Reset buttons
                         startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
                         startBtn.disabled = false;
@@ -1038,7 +1038,7 @@
                 })
                 .catch(error => {
                     console.error('Camera permission error:', error);
-                    
+
                     let errorMessage = '❌ Camera access denied. ';
                     if (error.name === 'NotAllowedError') {
                         errorMessage += 'Please allow camera access in your browser settings and try again.';
@@ -1049,9 +1049,9 @@
                     } else {
                         errorMessage += 'Please check your camera and permissions.';
                     }
-                    
+
                     showScanMessage(errorMessage, 'error');
-                    
+
                     // Reset buttons
                     startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
                     startBtn.disabled = false;
@@ -1069,7 +1069,7 @@
             if (qrCodeScanner) {
                 qrCodeScanner.stop().then(() => {
                     qrCodeScanner.clear();
-                    
+
                     // Reset UI
                     qrReader.classList.remove('scanning');
                     qrReader.innerHTML = `
@@ -1079,15 +1079,15 @@
                             <p class="text-xs text-gray-500 mt-2">Ensure good lighting for best results</p>
                         </div>
                     `;
-                    
+
                     startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
                     startBtn.disabled = false;
                     stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
-                    
+
                     showScanMessage('📷 Scanner stopped', 'info');
                 }).catch(error => {
                     console.error('Error stopping scanner:', error);
-                    
+
                     // Force reset
                     startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
                     startBtn.disabled = false;
@@ -1103,11 +1103,11 @@
             try {
                 // Try to parse as JSON first (new QR format)
                 const qrData = JSON.parse(decodedText);
-                
+
                 if (qrData.type === 'umuganda_resident' && qrData.id) {
                     userId = qrData.id;
                     userName = qrData.name;
-                    
+
                     // Show scan feedback with resident info
                     showScanMessage(`📱 Scanned: ${userName} (ID: ${userId})`, 'info');
                 } else {
@@ -1117,12 +1117,12 @@
             } catch (e) {
                 // Fallback: treat as plain user ID (old format)
                 const plainUserId = decodedText.trim();
-                
+
                 if (!/^\d+$/.test(plainUserId)) {
                     showScanMessage('Invalid QR code format. Please scan a resident QR code.', 'error');
                     return;
                 }
-                
+
                 userId = plainUserId;
                 userName = null; // Will be fetched from API
             }
@@ -1158,15 +1158,15 @@
                         const finalUserName = response.data.user_name || userName || `User ${userId}`;
                         addToRecentScans(userId, finalUserName);
                         showScanMessage(`✅ ${finalUserName} marked present successfully!`, 'success');
-                        
+
                         // Update progress counter
                         updateProgress();
-                        
+
                         // Play success sound (optional)
                         playSuccessSound();
                     } else {
                         showScanMessage(`❌ Error: ${response.message}`, 'error');
-                        
+
                         // Uncheck if marking failed
                         if (checkbox) {
                             checkbox.checked = false;
@@ -1176,7 +1176,7 @@
                 .catch(error => {
                     console.error('API Error:', error);
                     showScanMessage('❌ Failed to save attendance. Please try again.', 'error');
-                    
+
                     // Uncheck if marking failed
                     if (checkbox) {
                         checkbox.checked = false;
@@ -1213,7 +1213,7 @@
             const messageDiv = document.getElementById('scanMessage');
             if (messageDiv) {
                 messageDiv.textContent = message;
-                
+
                 let className = 'mt-4 p-3 rounded-lg text-sm border ';
                 switch(type) {
                     case 'success':
@@ -1228,7 +1228,7 @@
                     default:
                         className += 'bg-gray-100 text-gray-800 border-gray-200';
                 }
-                
+
                 messageDiv.className = className;
 
                 // Auto-hide after 5 seconds for success/info, 7 seconds for errors
@@ -1247,16 +1247,16 @@
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-                
+
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
-                
+
                 oscillator.frequency.value = 800; // High pitch beep
                 oscillator.type = 'sine';
-                
+
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                
+
                 oscillator.start(audioContext.currentTime);
                 oscillator.stop(audioContext.currentTime + 0.2);
             } catch (e) {
@@ -1402,7 +1402,7 @@
                     }
                 }
             }
-            
+
             // Escape to stop scanner
             if (e.code === 'Escape' && qrCodeScanner) {
                 stopQRScanner();
@@ -1413,17 +1413,17 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Update initial progress
             updateProgress();
-            
+
             // Show helpful tip if QR scanner is available
             const hasCamera = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
             if (hasCamera) {
                 console.log('📱 QR Scanner ready! Press SPACE to quick-start scanning.');
             }
-            
+
             // Auto-open QR scanner if event is pre-selected and no residents are marked yet
             const eventFilter = document.getElementById('eventFilter');
             const checkedBoxes = document.querySelectorAll('.resident-checkbox:checked');
-            
+
             if (eventFilter && eventFilter.value && checkedBoxes.length === 0) {
                 // Auto-show QR scanner after 2 seconds for better UX
                 setTimeout(() => {

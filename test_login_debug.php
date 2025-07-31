@@ -49,10 +49,13 @@ try {
     } else {
         echo "❌ No test users found. Creating a test user...<br>";
 
-        // Create a test user
+        // Create a test user with new location hierarchy
         $testPassword = password_hash('password123', PASSWORD_BCRYPT);
-        $query        = "INSERT INTO users (national_id, first_name, last_name, email, phone, password, cell, sector, district, province, date_of_birth, gender, role)
-                  VALUES ('1234567890123456', 'Test', 'User', 'test@test.com', '0781234567', ?, 'Test Cell', 'Test Sector', 'Test District', 'Test Province', '1990-01-01', 'male', 'resident')";
+        $query        = "INSERT INTO users (national_id, first_name, last_name, email, phone, password,
+                                          cell_id, sector_id, district_id, province_id,
+                                          cell, sector, district, province, date_of_birth, gender, role)
+                  VALUES ('1234567890123456', 'Test', 'User', 'test@test.com', '0781234567', ?,
+                          1, 1, 1, 1, 'Test Cell', 'Test Sector', 'Test District', 'Test Province', '1990-01-01', 'male', 'resident')";
         $db->execute($query, [$testPassword], 's');
         echo "✅ Test user created: test@test.com / password123<br>";
     }

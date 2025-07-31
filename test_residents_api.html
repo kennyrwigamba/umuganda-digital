@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Residents API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+        }
+
+        .result {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Residents API Test Page</h1>
+
+    <div class="section">
+        <h3>Test Add Resident</h3>
+        <button onclick="testAddResident()">Add Test Resident</button>
+        <div id="addResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>Test Update Resident</h3>
+        <input type="number" id="updateId" placeholder="Resident ID" />
+        <button onclick="testUpdateResident()">Update Resident</button>
+        <div id="updateResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>Test Delete Resident</h3>
+        <input type="number" id="deleteId" placeholder="Resident ID" />
+        <button onclick="testDeleteResident()">Delete Resident</button>
+        <div id="deleteResult" class="result"></div>
+    </div>
+
+    <script>
+        async function testAddResident() {
+            const resultDiv = document.getElementById('addResult');
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                const response = await fetch('/public/api/residents.php?action=add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        first_name: 'Test',
+                        last_name: 'Resident',
+                        email: 'test' + Date.now() + '@example.com',
+                        phone: '+250787123456',
+                        national_id: '1234567890123456',
+                        cell_id: 1 // Assuming cell ID 1 exists
+                    })
+                });
+
+                const result = await response.json();
+                resultDiv.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                resultDiv.className = 'result ' + (result.success ? 'success' : 'error');
+
+                if (result.success) {
+                    alert('Resident ID: ' + result.resident_id + ' - Use this for update/delete tests');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = 'Error: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testUpdateResident() {
+            const id = document.getElementById('updateId').value;
+            const resultDiv = document.getElementById('updateResult');
+
+            if (!id) {
+                resultDiv.innerHTML = 'Please enter a resident ID';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                const response = await fetch('/public/api/residents.php?action=edit', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: parseInt(id),
+                        first_name: 'Updated',
+                        last_name: 'Resident',
+                        email: 'updated' + Date.now() + '@example.com',
+                        phone: '+250787654321',
+                        cell_id: 1,
+                        status: 'active'
+                    })
+                });
+
+                const result = await response.json();
+                resultDiv.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                resultDiv.className = 'result ' + (result.success ? 'success' : 'error');
+            } catch (error) {
+                resultDiv.innerHTML = 'Error: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testDeleteResident() {
+            const id = document.getElementById('deleteId').value;
+            const resultDiv = document.getElementById('deleteResult');
+
+            if (!id) {
+                resultDiv.innerHTML = 'Please enter a resident ID';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this test resident?')) {
+                return;
+            }
+
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                const response = await fetch('/public/api/residents.php?action=delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: parseInt(id)
+                    })
+                });
+
+                const result = await response.json();
+                resultDiv.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                resultDiv.className = 'result ' + (result.success ? 'success' : 'error');
+            } catch (error) {
+                resultDiv.innerHTML = 'Error: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+
+</html>
