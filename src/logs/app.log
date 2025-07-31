@@ -105,3 +105,4 @@
 [2025-07-30 14:24:10] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
 [2025-07-31 12:40:36] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: grace@example.com
 [2025-07-31 12:40:41] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com
+[2025-07-31 21:30:02] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
