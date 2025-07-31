@@ -21,7 +21,7 @@ CREATE TABLE users (
     province VARCHAR(100) NOT NULL,
     date_of_birth DATE NOT NULL,
     gender ENUM('male', 'female') NOT NULL,
-    role ENUM('admin', 'resident') DEFAULT 'resident',
+    role ENUM('superadmin', 'admin', 'resident') DEFAULT 'resident',
     status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
     profile_picture VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
