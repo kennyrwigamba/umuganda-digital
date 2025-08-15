@@ -106,3 +106,52 @@
 [2025-07-31 12:40:36] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: grace@example.com
 [2025-07-31 12:40:41] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com
 [2025-07-31 21:30:02] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-07-31 21:51:57] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-08-12 23:02:33] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: admin@example.com
+[2025-08-12 23:02:38] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-08-12 23:04:01] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-08-13 20:26:36] [info] [User: 3] [IP: 127.0.0.1] User logged in: eric@example.com
+[2025-08-13 22:07:40] [info] [User: guest] [IP: 127.0.0.1] User logged out: eric@example.com (ID: 3)
+[2025-08-13 22:08:05] [info] [User: 7] [IP: 127.0.0.1] User logged in: patrick@example.com
+[2025-08-13 22:10:52] [info] [User: guest] [IP: 127.0.0.1] User logged out: patrick@example.com (ID: 7)
+[2025-08-13 22:11:08] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-08-14 16:06:34] [info] [User: 3] [IP: 127.0.0.1] User logged in: eric@example.com
+[2025-08-14 16:06:49] [info] [User: guest] [IP: 127.0.0.1] User logged out: eric@example.com (ID: 3)
+[2025-08-14 16:07:00] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-08-14 18:08:13] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-08-14 18:12:43] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-08-15 09:39:05] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-08-15 10:25:31] [warning] [User: guest] [IP: 127.0.0.1] Failed login attempt for email: grace@example.com
+[2025-08-15 10:25:40] [info] [User: 6] [IP: 127.0.0.1] User logged in: grace@example.com
+[2025-08-15 19:23:11] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-08-15 20:07:10] [error] [User: guest] [IP: 127.0.0.1] Registration error: Unknown column 'cell' in 'field list'
+[2025-08-15 20:22:45] [error] [User: guest] [IP: unknown] Registration error: Unknown column 'cell' in 'field list'
+[2025-08-15 20:23:50] [info] [User: guest] [IP: unknown] New resident registered: test_1755282230@example.com (ID: 23)
+[2025-08-15 20:24:51] [info] [User: guest] [IP: unknown] New resident registered: test_location_1755282291@example.com (ID: 24)
+[2025-08-15 20:42:51] [info] [User: guest] [IP: 127.0.0.1] New resident registered: louangekeddy@gmail.com (ID: 25)
+[2025-08-15 20:59:43] [info] [User: guest] [IP: 127.0.0.1] New resident registered: ambakeddy@gmail.com (ID: 26)
+[2025-08-15 21:11:25] [info] [User: guest] [IP: unknown] New resident registered: test1755285085@example.com (ID: 27)
+[2025-08-15 21:11:29] [warning] [User: guest] [IP: unknown] Failed to send welcome email to test1755285085@example.com: Email send failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[2025-08-15 21:16:49] [info] [User: guest] [IP: 127.0.0.1] New resident registered: kennyrwigamba@gmail.com (ID: 28)
+[2025-08-15 21:16:53] [warning] [User: guest] [IP: 127.0.0.1] Failed to send welcome email to kennyrwigamba@gmail.com: Email send failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[2025-08-15 21:29:35] [info] [User: guest] [IP: unknown] New resident registered: test1755286175@example.com (ID: 29)
+[2025-08-15 21:29:47] [info] [User: guest] [IP: unknown] Welcome email sent to: test1755286175@example.com
+[2025-08-15 21:30:24] [info] [User: guest] [IP: unknown] New resident registered: webtest1755286224@example.com (ID: 30)
+[2025-08-15 21:30:32] [info] [User: guest] [IP: unknown] Welcome email sent to: webtest1755286224@example.com
+[2025-08-15 21:39:17] [info] [User: guest] [IP: unknown] New resident registered: test1755286757@example.com (ID: 31)
+[2025-08-15 21:39:24] [info] [User: guest] [IP: unknown] Welcome email sent to: test1755286757@example.com
+[2025-08-15 21:44:02] [info] [User: guest] [IP: 127.0.0.1] New resident registered: louangekeddy@gmail.com (ID: 32)
+[2025-08-15 21:44:08] [info] [User: guest] [IP: 127.0.0.1] Welcome email sent to: louangekeddy@gmail.com
+[2025-08-15 21:46:58] [info] [User: guest] [IP: unknown] New resident registered: apitest1755287218@example.com (ID: 33)
+[2025-08-15 21:47:05] [info] [User: guest] [IP: unknown] Welcome email sent to: apitest1755287218@example.com
+[2025-08-15 21:47:30] [info] [User: guest] [IP: unknown] New resident registered: apitest1755287249@example.com (ID: 34)
+[2025-08-15 21:47:35] [info] [User: guest] [IP: unknown] Welcome email sent to: apitest1755287249@example.com
+[2025-08-15 21:51:28] [info] [User: guest] [IP: unknown] New resident registered: webuser1755287488@example.com (ID: 35)
+[2025-08-15 21:51:34] [info] [User: guest] [IP: unknown] Welcome email sent to: webuser1755287488@example.com
+[2025-08-15 21:54:04] [info] [User: guest] [IP: 127.0.0.1] New resident registered: kennyrwigamba@gmail.com (ID: 36)
+[2025-08-15 21:54:11] [info] [User: guest] [IP: 127.0.0.1] Welcome email sent to: kennyrwigamba@gmail.com
+[2025-08-15 21:56:06] [info] [User: 2] [IP: 127.0.0.1] User logged in: admin@example.com
+[2025-08-15 22:40:37] [info] [User: guest] [IP: unknown] New resident registered: webuser1755290437@example.com (ID: 37)
+[2025-08-15 22:40:37] [info] [User: guest] [IP: unknown] Welcome notification created for user: webuser1755290437@example.com (Notification ID: 9)
+[2025-08-15 22:46:35] [info] [User: guest] [IP: 127.0.0.1] User logged out: admin@example.com
+[2025-08-15 22:46:56] [info] [User: 32] [IP: 127.0.0.1] User logged in: louangekeddy@gmail.com

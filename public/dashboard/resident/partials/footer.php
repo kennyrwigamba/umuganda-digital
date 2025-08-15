@@ -1,3 +1,47 @@
+<!-- JavaScript for Profile Dropdown -->
+    <script>
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            const button = document.getElementById('profileButton');
+            
+            if (dropdown.classList.contains('opacity-0')) {
+                // Show dropdown
+                dropdown.classList.remove('opacity-0', 'invisible', 'translate-y-1');
+                dropdown.classList.add('opacity-100', 'visible', 'translate-y-0');
+                button.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
+            } else {
+                // Hide dropdown
+                dropdown.classList.add('opacity-0', 'invisible', 'translate-y-1');
+                dropdown.classList.remove('opacity-100', 'visible', 'translate-y-0');
+                button.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('profileDropdown');
+            const button = document.getElementById('profileButton');
+            
+            if (!dropdown.contains(event.target) && !button.contains(event.target)) {
+                dropdown.classList.add('opacity-0', 'invisible', 'translate-y-1');
+                dropdown.classList.remove('opacity-100', 'visible', 'translate-y-0');
+                button.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+            }
+        });
+
+        // Close dropdown when pressing Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const dropdown = document.getElementById('profileDropdown');
+                const button = document.getElementById('profileButton');
+                
+                dropdown.classList.add('opacity-0', 'invisible', 'translate-y-1');
+                dropdown.classList.remove('opacity-100', 'visible', 'translate-y-0');
+                button.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+            }
+        });
+    </script>
+
     <script>
         // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');

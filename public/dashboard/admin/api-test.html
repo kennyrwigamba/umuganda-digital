@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>API Test</title>
+</head>
+
+<body>
+    <h1>QR Attendance API Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+
+            try {
+                // Test different API paths
+                const paths = [
+                    '/api/qr-attendance.php',
+                    '../../api/qr-attendance.php',
+                    '/public/api/qr-attendance.php',
+                    '../../../api/qr-attendance.php'
+                ];
+
+                resultDiv.innerHTML = '<h3>Testing API paths...</h3>';
+
+                for (const path of paths) {
+                    try {
+                        resultDiv.innerHTML += `<p>Testing: ${path}</p>`;
+
+                        const response = await fetch(path, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                user_id: 1,
+                                event_id: 1
+                            })
+                        });
+
+                        resultDiv.innerHTML += `<p style="color: green;">✅ ${path} - Status: ${response.status}</p>`;
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            resultDiv.innerHTML += `<p style="color: blue;">Response: ${JSON.stringify(data)}</p>`;
+                            break; // Found working path
+                        }
+
+                    } catch (error) {
+                        resultDiv.innerHTML += `<p style="color: red;">❌ ${path} - Error: ${error.message}</p>`;
+                    }
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML += `<p style="color: red;">General Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

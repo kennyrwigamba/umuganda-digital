@@ -432,13 +432,13 @@
                             <div>
                                 <p class="text-sm font-semibold text-red-600 uppercase tracking-wide">Outstanding Fines
                                 </p>
-                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo formatAmount($outstandingAmount)?> <span
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo formatAmount($outstandingAmount) ?> <span
                                         class="text-lg text-red-700 font-bold">RWF</span></p>
                                 <div class="flex items-center mt-3">
                                     <span
                                         class="inline-flex items-center text-sm text-danger-600 font-semibold bg-danger-50 px-2 py-1 rounded-full">
                                         <i class="fas fa-exclamation-circle text-xs mr-1"></i>
-                                        <?php echo $outstandingCount?>
+                                        <?php echo $outstandingCount ?>
                                     </span>
                                     <span class="text-sm text-gray-600 ml-2 font-medium">unpaid fines</span>
                                 </div>
@@ -457,7 +457,7 @@
                             <div>
                                 <p class="text-sm font-semibold text-green-600 uppercase tracking-wide">Collected This
                                     Month</p>
-                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo formatAmount($collectedAmount)?> <span
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo formatAmount($collectedAmount) ?> <span
                                         class="text-lg text-green-700 font-bold">RWF</span></p>
                                 <div class="flex items-center mt-3">
                                     <span
@@ -482,7 +482,7 @@
                             <div>
                                 <p class="text-sm font-semibold text-orange-600 uppercase tracking-wide">Average Fine
                                 </p>
-                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo formatAmount($averageAmount)?> <span
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo formatAmount($averageAmount) ?> <span
                                         class="text-lg text-orange-700 font-bold">RWF</span></p>
                                 <div class="flex items-center mt-3">
                                     <span
@@ -506,12 +506,12 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide">Payment Rate</p>
-                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo $paymentRate?>%</p>
+                                <p class="text-3xl font-black text-gray-900 mt-2"><?php echo $paymentRate ?>%</p>
                                 <div class="flex items-center mt-3">
                                     <span
                                         class="inline-flex items-center text-sm text-primary-600 font-semibold bg-primary-50 px-2 py-1 rounded-full">
                                         <i class="fas fa-percentage text-xs mr-1"></i>
-                                        <?php echo $paymentRate >= 70 ? 'Good' : ($paymentRate >= 50 ? 'Fair' : 'Poor')?>
+                                        <?php echo $paymentRate >= 70 ? 'Good' : ($paymentRate >= 50 ? 'Fair' : 'Poor') ?>
                                     </span>
                                     <span class="text-sm text-gray-600 ml-2 font-medium">collection rate</span>
                                 </div>
@@ -569,10 +569,10 @@
                             <div class="relative">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
                                 <div class="flex gap-2">
-                                    <input type="date" name="date_from" value="<?php echo htmlspecialchars($dateFrom)?>"
+                                    <input type="date" name="date_from" value="<?php echo htmlspecialchars($dateFrom) ?>"
                                         class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                     <span class="flex items-center text-gray-500">to</span>
-                                    <input type="date" name="date_to" value="<?php echo htmlspecialchars($dateTo)?>"
+                                    <input type="date" name="date_to" value="<?php echo htmlspecialchars($dateTo) ?>"
                                         class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                 </div>
                             </div>
@@ -583,10 +583,10 @@
                                 <select name="status"
                                     class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                     <option value="">All Status</option>
-                                    <option value="pending" <?php echo $statusFilter === 'pending' ? 'selected' : ''?>>Unpaid</option>
-                                    <option value="paid" <?php echo $statusFilter === 'paid' ? 'selected' : ''?>>Paid</option>
-                                    <option value="waived" <?php echo $statusFilter === 'waived' ? 'selected' : ''?>>Waived</option>
-                                    <option value="disputed" <?php echo $statusFilter === 'disputed' ? 'selected' : ''?>>Disputed</option>
+                                    <option value="pending"                                                            <?php echo $statusFilter === 'pending' ? 'selected' : '' ?>>Unpaid</option>
+                                    <option value="paid"                                                         <?php echo $statusFilter === 'paid' ? 'selected' : '' ?>>Paid</option>
+                                    <option value="waived"                                                           <?php echo $statusFilter === 'waived' ? 'selected' : '' ?>>Waived</option>
+                                    <option value="disputed"                                                             <?php echo $statusFilter === 'disputed' ? 'selected' : '' ?>>Disputed</option>
                                 </select>
                             </div>
 
@@ -596,17 +596,17 @@
                                 <select name="type"
                                     class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                     <option value="">All Types</option>
-                                    <option value="absence" <?php echo $typeFilter === 'absence' ? 'selected' : ''?>>Absence</option>
-                                    <option value="late_arrival" <?php echo $typeFilter === 'late_arrival' ? 'selected' : ''?>>Late Arrival</option>
-                                    <option value="early_departure" <?php echo $typeFilter === 'early_departure' ? 'selected' : ''?>>Early Departure</option>
-                                    <option value="other" <?php echo $typeFilter === 'other' ? 'selected' : ''?>>Other</option>
+                                    <option value="absence"                                                            <?php echo $typeFilter === 'absence' ? 'selected' : '' ?>>Absence</option>
+                                    <option value="late_arrival"                                                                 <?php echo $typeFilter === 'late_arrival' ? 'selected' : '' ?>>Late Arrival</option>
+                                    <option value="early_departure"                                                                    <?php echo $typeFilter === 'early_departure' ? 'selected' : '' ?>>Early Departure</option>
+                                    <option value="other"                                                          <?php echo $typeFilter === 'other' ? 'selected' : '' ?>>Other</option>
                                 </select>
                             </div>
 
                             <!-- Search -->
                             <div class="relative">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                                <input type="text" name="search" value="<?php echo htmlspecialchars($searchTerm)?>"
+                                <input type="text" name="search" value="<?php echo htmlspecialchars($searchTerm) ?>"
                                     placeholder="Name or ID..."
                                     class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                             </div>
@@ -633,12 +633,12 @@
                             <h3 class="text-lg font-semibold text-gray-900">Fines & Payments</h3>
                             <div class="flex items-center space-x-3">
                                 <div class="text-sm text-gray-600">
-                                    Showing <span class="font-medium"><?php echo min(($page - 1) * $limit + 1, $totalFinesForPagination)?>-<?php echo min($page * $limit, $totalFinesForPagination)?></span> of <span
-                                        class="font-medium"><?php echo $totalFinesForPagination?></span> fines
+                                    Showing <span class="font-medium"><?php echo min(($page - 1) * $limit + 1, $totalFinesForPagination) ?>-<?php echo min($page * $limit, $totalFinesForPagination) ?></span> of <span
+                                        class="font-medium"><?php echo $totalFinesForPagination ?></span> fines
                                 </div>
                                 <div class="flex rounded-lg border border-gray-300 overflow-hidden">
                                     <?php if ($page > 1): ?>
-                                    <a href="?page=<?php echo $page - 1?><?php echo $searchTerm ? '&search=' . urlencode($searchTerm) : ''?><?php echo $statusFilter ? '&status=' . urlencode($statusFilter) : ''?><?php echo $typeFilter ? '&type=' . urlencode($typeFilter) : ''?><?php echo $dateFrom ? '&date_from=' . urlencode($dateFrom) : ''?><?php echo $dateTo ? '&date_to=' . urlencode($dateTo) : ''?>"
+                                    <a href="?page=<?php echo $page - 1 ?><?php echo $searchTerm ? '&search=' . urlencode($searchTerm) : '' ?><?php echo $statusFilter ? '&status=' . urlencode($statusFilter) : '' ?><?php echo $typeFilter ? '&type=' . urlencode($typeFilter) : '' ?><?php echo $dateFrom ? '&date_from=' . urlencode($dateFrom) : '' ?><?php echo $dateTo ? '&date_to=' . urlencode($dateTo) : '' ?>"
                                         class="px-3 py-1 text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
@@ -648,10 +648,10 @@
                                     </span>
                                     <?php endif; ?>
 
-                                    <span class="px-3 py-1 text-xs bg-white text-gray-700"><?php echo $page?></span>
+                                    <span class="px-3 py-1 text-xs bg-white text-gray-700"><?php echo $page ?></span>
 
                                     <?php if ($page < $totalPages): ?>
-                                    <a href="?page=<?php echo $page + 1?><?php echo $searchTerm ? '&search=' . urlencode($searchTerm) : ''?><?php echo $statusFilter ? '&status=' . urlencode($statusFilter) : ''?><?php echo $typeFilter ? '&type=' . urlencode($typeFilter) : ''?><?php echo $dateFrom ? '&date_from=' . urlencode($dateFrom) : ''?><?php echo $dateTo ? '&date_to=' . urlencode($dateTo) : ''?>"
+                                    <a href="?page=<?php echo $page + 1 ?><?php echo $searchTerm ? '&search=' . urlencode($searchTerm) : '' ?><?php echo $statusFilter ? '&status=' . urlencode($statusFilter) : '' ?><?php echo $typeFilter ? '&type=' . urlencode($typeFilter) : '' ?><?php echo $dateFrom ? '&date_from=' . urlencode($dateFrom) : '' ?><?php echo $dateTo ? '&date_to=' . urlencode($dateTo) : '' ?>"
                                         class="px-3 py-1 text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
@@ -731,50 +731,45 @@
 ?>
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <input type="checkbox" value="<?php echo $fine['id']?>"
+                                        <input type="checkbox" value="<?php echo $fine['id'] ?>"
                                             class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div
-                                                class="w-10 h-10 bg-gradient-to-br <?php echo $cardColor?> rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                                <span class="text-white text-sm font-semibold"><?php echo $initials?></span>
+                                                class="w-10 h-10 bg-gradient-to-br                                                                                   <?php echo $cardColor ?> rounded-full flex items-center justify-center mr-4 shadow-sm">
+                                                <span class="text-white text-sm font-semibold"><?php echo $initials ?></span>
                                             </div>
                                             <div>
-                                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($fine['first_name'] . ' ' . $fine['last_name'])?></div>
-                                                <div class="text-sm text-gray-500">ID: <?php echo htmlspecialchars($fine['national_id'])?> • <?php echo htmlspecialchars($adminSector)?></div>
+                                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($fine['first_name'] . ' ' . $fine['last_name']) ?></div>
+                                                <div class="text-sm text-gray-500">ID:                                                                                       <?php echo htmlspecialchars($fine['national_id']) ?> •<?php echo htmlspecialchars($adminSector) ?></div>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php echo getReasonBadge($fine['reason'])?>
+                                        <?php echo getReasonBadge($fine['reason']) ?>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?php echo formatAmount($fine['amount'])?> RWF</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?php echo date('M j, Y', strtotime($fine['created_at']))?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?php echo formatAmount($fine['amount']) ?> RWF</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?php echo date('M j, Y', strtotime($fine['created_at'])) ?></td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <?php if ($isOverdueStatus): ?>
                                             <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                                 <i class="fas fa-clock mr-1"></i>Overdue
                                             </span>
                                         <?php else: ?>
-                                            <?php echo getStatusBadge($fine['status'])?>
+<?php echo getStatusBadge($fine['status']) ?>
 <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <?php if ($fine['status'] === 'pending'): ?>
                                         <button class="text-success-600 hover:text-success-900 mr-3 mark-paid-btn"
-                                            data-fine-id="<?php echo $fine['id']?>" title="Mark as Paid">
+                                            data-fine-id="<?php echo $fine['id'] ?>" title="Mark as Paid">
                                             <i class="fas fa-check-circle"></i>
                                         </button>
                                         <?php endif; ?>
 
-                                        <button class="text-primary-600 hover:text-primary-900 mr-3 edit-fine-btn"
-                                            data-fine-id="<?php echo $fine['id']?>" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-
                                         <button class="text-gray-400 hover:text-gray-600 view-fine-btn"
-                                            data-fine-id="<?php echo $fine['id']?>" title="View Details">
+                                            data-fine-id="<?php echo $fine['id'] ?>" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     </td>
@@ -837,9 +832,9 @@
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                                 <option value="">Select a resident</option>
                                 <?php foreach ($residents as $resident): ?>
-                                <option value="<?php echo $resident['id']?>">
-                                    <?php echo htmlspecialchars($resident['first_name'] . ' ' . $resident['last_name'])?>
-                                    (ID: <?php echo htmlspecialchars($resident['national_id'])?>)
+                                <option value="<?php echo $resident['id'] ?>">
+                                    <?php echo htmlspecialchars($resident['first_name'] . ' ' . $resident['last_name']) ?>
+                                    (ID:<?php echo htmlspecialchars($resident['national_id']) ?>)
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -864,7 +859,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-                            <input type="date" name="due_date" value="<?php echo date('Y-m-d', strtotime('+30 days'))?>" required
+                            <input type="date" name="due_date" value="<?php echo date('Y-m-d', strtotime('+30 days')) ?>" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                         </div>
 
@@ -1058,10 +1053,10 @@
                 const collectionsChart = new Chart(collectionsCtx, {
                     type: 'bar',
                     data: {
-                        labels: <?php echo json_encode(array_column($collectionsChartData, 'month'))?>,
+                        labels:                                <?php echo json_encode(array_column($collectionsChartData, 'month')) ?>,
                         datasets: [{
                             label: 'Collections (RWF)',
-                            data: <?php echo json_encode(array_column($collectionsChartData, 'amount'))?>,
+                            data:                                  <?php echo json_encode(array_column($collectionsChartData, 'amount')) ?>,
                             backgroundColor: 'rgba(34, 197, 94, 0.8)',
                             borderColor: '#16a34a',
                             borderWidth: 1,
@@ -1126,9 +1121,9 @@
                 const fineTypesChart = new Chart(fineTypesCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: <?php echo json_encode($fineTypeLabels)?>,
+                        labels:                                <?php echo json_encode($fineTypeLabels) ?>,
                         datasets: [{
-                            data: <?php echo json_encode($fineTypesData)?>,
+                            data:                                  <?php echo json_encode($fineTypesData) ?>,
                             backgroundColor: ['#ef4444', '#f59e0b', '#f97316', '#6b7280'],
                             borderWidth: 0,
                             cutout: '65%'
@@ -1162,6 +1157,175 @@
                         }
                     }
                 });
+            }
+        });
+
+        // Handle View Fine buttons
+        document.addEventListener('click', async function(e) {
+            if (e.target.closest('.view-fine-btn')) {
+                e.preventDefault();
+                const btn = e.target.closest('.view-fine-btn');
+                const fineId = btn.getAttribute('data-fine-id');
+
+                console.log('View button clicked, fine ID:', fineId);
+
+                try {
+                    const url = `fine-details.php?id=${fineId}`;
+                    console.log('Fetching URL:', url);
+
+                    const response = await fetch(url);
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('Response data:', result);
+
+                    if (result.success) {
+                        showFineDetailsModal(result.fine);
+                    } else {
+                        showNotification(result.message || 'Failed to load fine details', 'error');
+                    }
+                } catch (error) {
+                    console.error('Detailed error:', error);
+                    console.error('Error message:', error.message);
+                    console.error('Error stack:', error.stack);
+                    showNotification('Network error occurred: ' + error.message, 'error');
+                }
+            }
+        });
+
+        // Show fine details modal
+        function showFineDetailsModal(fine) {
+            const modalHTML = `
+                <div id="fineDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-900">Fine Details</h3>
+                                <button onclick="closeFineDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Resident</label>
+                                    <p class="mt-1 text-sm text-gray-900">${fine.first_name} ${fine.last_name}</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                                    <p class="mt-1 text-sm text-gray-900">${fine.email || '-'}</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Event</label>
+                                    <p class="mt-1 text-sm text-gray-900">${fine.event_title || '-'}</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Amount</label>
+                                    <p class="mt-1 text-sm font-semibold text-gray-900">${new Intl.NumberFormat().format(fine.amount)} RWF</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Reason</label>
+                                    <p class="mt-1 text-sm text-gray-900">${fine.reason || '-'}</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                                    <span class="mt-1 inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(fine.status)}">
+                                        ${fine.status.charAt(0).toUpperCase() + fine.status.slice(1)}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Due Date</label>
+                                    <p class="mt-1 text-sm text-gray-900">${fine.due_date ? new Date(fine.due_date).toLocaleDateString() : '-'}</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Created Date</label>
+                                    <p class="mt-1 text-sm text-gray-900">${fine.created_at ? new Date(fine.created_at).toLocaleDateString() : '-'}</p>
+                                </div>
+
+                                ${fine.reason_description ? `
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                                        <p class="mt-1 text-sm text-gray-900">${fine.reason_description}</p>
+                                    </div>
+                                ` : ''}
+
+                                ${fine.payment_date ? `
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Payment Date</label>
+                                        <p class="mt-1 text-sm text-gray-900">${new Date(fine.payment_date).toLocaleDateString()}</p>
+                                    </div>
+                                ` : ''}
+
+                                ${fine.payment_method ? `
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Payment Method</label>
+                                        <p class="mt-1 text-sm text-gray-900">${fine.payment_method}</p>
+                                    </div>
+                                ` : ''}
+
+                                ${fine.payment_reference ? `
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700">Payment Reference</label>
+                                        <p class="mt-1 text-sm text-gray-900">${fine.payment_reference}</p>
+                                    </div>
+                                ` : ''}
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Created By</label>
+                                    <p class="mt-1 text-sm text-gray-900">${fine.created_by_name || '-'}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-end mt-6">
+                                <button onclick="closeFineDetailsModal()"
+                                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        // Close fine details modal
+        function closeFineDetailsModal() {
+            const modal = document.getElementById('fineDetailsModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Get status badge CSS class
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'paid': return 'bg-green-100 text-green-800';
+                case 'pending': return 'bg-yellow-100 text-yellow-800';
+                case 'waived': return 'bg-blue-100 text-blue-800';
+                case 'disputed': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('fineDetailsModal');
+            if (modal && event.target === modal) {
+                closeFineDetailsModal();
             }
         });
     </script>

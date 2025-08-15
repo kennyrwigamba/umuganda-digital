@@ -255,7 +255,7 @@
         <?php include 'partials/sidebar.php'; ?>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden md:ml-0">
+        <div class="flex-1 flex flex-col overflow md:ml-0">
             <!-- Top Navbar -->
             <?php include 'partials/top-nav.php'; ?>
 
@@ -338,7 +338,7 @@
                     <!-- Settings Tabs -->
                     <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100">
                         <div class="border-b border-gray-200">
-                            <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+                            <nav class="-mb-px flex space-x-8 px-6 overflow-auto" aria-label="Tabs">
                                 <button onclick="switchTab('personal')"
                                     class="tab-btn active border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm">
                                     Personal Information

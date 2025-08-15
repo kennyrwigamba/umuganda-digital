@@ -1,150 +1,40 @@
 <?php
 /**
- * Location API endpoints
- * Provides AJAX endpoints for location hierarchy dropdowns
+ * Locations API endpoint for public directory
+ * This provides a direct path for the frontend to access location data
  */
 
-require_once '../config/db.php';
-require_once '../src/models/LocationManager.php';
+// Start session for authentication
+session_start();
 
-// Set JSON header
+// Include required files (go up one level from public/api to project root)
+require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../src/helpers/functions.php';
+require_once __DIR__ . '/../../src/controllers/LocationController.php';
+
+// Set JSON response headers
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
-// Get the action from the request
-$action = $_GET['action'] ?? '';
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
 
 try {
-    $locationManager = new LocationManager($pdo);
-
-    switch ($action) {
-        case 'provinces':
-            $provinces = $locationManager->getProvinces();
-            echo json_encode([
-                'success' => true,
-                'data'    => $provinces,
-            ]);
-            break;
-
-        case 'districts':
-            $provinceId = $_GET['province_id'] ?? null;
-            if (! $provinceId) {
-                throw new Exception('Province ID is required');
-            }
-
-            $districts = $locationManager->getDistrictsByProvince($provinceId);
-            echo json_encode([
-                'success' => true,
-                'data'    => $districts,
-            ]);
-            break;
-
-        case 'sectors':
-            $districtId = $_GET['district_id'] ?? null;
-            if (! $districtId) {
-                throw new Exception('District ID is required');
-            }
-
-            $sectors = $locationManager->getSectorsByDistrict($districtId);
-            echo json_encode([
-                'success' => true,
-                'data'    => $sectors,
-            ]);
-            break;
-
-        case 'cells':
-            $sectorId = $_GET['sector_id'] ?? null;
-            if (! $sectorId) {
-                throw new Exception('Sector ID is required');
-            }
-
-            $cells = $locationManager->getCellsBySector($sectorId);
-            echo json_encode([
-                'success' => true,
-                'data'    => $cells,
-            ]);
-            break;
-
-        case 'location_path':
-            $cellId = $_GET['cell_id'] ?? null;
-            if (! $cellId) {
-                throw new Exception('Cell ID is required');
-            }
-
-            $path      = $locationManager->getLocationPath($cellId);
-            $hierarchy = $locationManager->getLocationHierarchy($cellId);
-
-            echo json_encode([
-                'success' => true,
-                'data'    => [
-                    'path'      => $path,
-                    'hierarchy' => $hierarchy,
-                ],
-            ]);
-            break;
-
-        case 'search':
-            $searchTerm = $_GET['q'] ?? '';
-            $type       = $_GET['type'] ?? null;
-
-            if (strlen($searchTerm) < 2) {
-                throw new Exception('Search term must be at least 2 characters');
-            }
-
-            $results = $locationManager->searchLocations($searchTerm, $type);
-            echo json_encode([
-                'success' => true,
-                'data'    => $results,
-            ]);
-            break;
-
-        case 'complete_hierarchy':
-            $hierarchy = $locationManager->getCompleteHierarchy();
-            echo json_encode([
-                'success' => true,
-                'data'    => $hierarchy,
-            ]);
-            break;
-
-        case 'resident_count':
-            $locationId   = $_GET['location_id'] ?? null;
-            $locationType = $_GET['type'] ?? null;
-
-            if (! $locationId || ! $locationType) {
-                throw new Exception('Location ID and type are required');
-            }
-
-            $count = $locationManager->getResidentCountByLocation($locationId, $locationType);
-            echo json_encode([
-                'success' => true,
-                'data'    => ['count' => $count],
-            ]);
-            break;
-
-        case 'validate_hierarchy':
-            $cellId     = $_GET['cell_id'] ?? null;
-            $sectorId   = $_GET['sector_id'] ?? null;
-            $districtId = $_GET['district_id'] ?? null;
-            $provinceId = $_GET['province_id'] ?? null;
-
-            if (! $cellId || ! $sectorId || ! $districtId || ! $provinceId) {
-                throw new Exception('All location IDs are required for validation');
-            }
-
-            $isValid = $locationManager->validateLocationHierarchy($cellId, $sectorId, $districtId, $provinceId);
-            echo json_encode([
-                'success' => true,
-                'data'    => ['valid' => $isValid],
-            ]);
-            break;
-
-        default:
-            throw new Exception('Invalid action');
-    }
-
+    // Create LocationController instance
+    $controller = new LocationController();
+    
+    // Call the index method which handles the action parameter
+    $controller->index();
+    
 } catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'error'   => $e->getMessage(),
-    ]);
+    // Log error
+    logActivity('Location API Error: ' . $e->getMessage(), 'error');
+    
+    // Return error response
+    errorResponse('Internal server error: ' . $e->getMessage(), 500);
 }
+?>

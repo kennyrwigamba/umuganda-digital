@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner Test</title>
+    <script src="/assets/js/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>QR Scanner Test</h1>
+    <p>This page tests if the QR scanner works correctly with the attendance system.</p>
+
+    <button onclick="startScanner()" id="startBtn">Start Scanner</button>
+    <button onclick="stopScanner()" id="stopBtn" disabled>Stop Scanner</button>
+
+    <div id="reader"></div>
+    <div id="result">Scan a QR code to see results here...</div>
+
+    <script>
+        let scanner = null;
+
+        function startScanner() {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            if (typeof Html5QrcodeScanner === 'undefined') {
+                document.getElementById('result').innerHTML = 'Error: QR Scanner library not loaded!';
+                return;
+            }
+
+            try {
+                // Clear any existing scanner
+                if (scanner) {
+                    scanner.clear();
+                }
+
+                scanner = new Html5QrcodeScanner('reader', {
+                    qrbox: {
+                        width: 250,
+                        height: 250,
+                    },
+                    fps: 20,
+                });
+
+                scanner.render(onScanSuccess, onScanError);
+
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                document.getElementById('result').innerHTML = 'Scanner started! Point camera at QR code...';
+
+            } catch (error) {
+                console.error('Scanner error:', error);
+                document.getElementById('result').innerHTML = 'Error starting scanner: ' + error.message;
+            }
+        }
+
+        function stopScanner() {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            if (scanner) {
+                scanner.clear();
+                scanner = null;
+            }
+
+            document.getElementById('reader').innerHTML = '';
+            document.getElementById('result').innerHTML = 'Scanner stopped.';
+
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log('QR Code scanned:', decodedText);
+
+            document.getElementById('result').innerHTML = `
+                <h3>✅ Success!</h3>
+                <p><strong>Scanned Data:</strong> ${decodedText}</p>
+                <p><small>Scanner is still active. Scan another code or click Stop.</small></p>
+            `;
+
+            // Test if it's a resident QR code
+            try {
+                const qrData = JSON.parse(decodedText);
+                if (qrData.type === 'umuganda_resident') {
+                    document.getElementById('result').innerHTML += `
+                        <div style="margin-top: 10px; padding: 10px; background: #d4edda; border-radius: 5px;">
+                            <strong>Resident QR Code Detected!</strong><br>
+                            ID: ${qrData.id}<br>
+                            Name: ${qrData.name || 'N/A'}<br>
+                            Cell: ${qrData.cell || 'N/A'}<br>
+                            Sector: ${qrData.sector || 'N/A'}
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                // Not JSON, check if it's a simple user ID
+                if (/^\d+$/.test(decodedText)) {
+                    document.getElementById('result').innerHTML += `
+                        <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                            <strong>User ID Format:</strong> ${decodedText}
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function onScanError(error) {
+            // Don't log "no QR code found" errors
+            if (!error.includes('NotFoundException')) {
+                console.warn('QR Scan error:', error);
+            }
+        }
+
+        // Test library loading on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Html5QrcodeScanner === 'undefined') {
+                document.getElementById('result').innerHTML = '❌ QR Scanner library failed to load. Check console for errors.';
+            } else {
+                document.getElementById('result').innerHTML = '✅ QR Scanner library loaded successfully! Click "Start Scanner" to begin.';
+            }
+        });
+    </script>
+</body>
+
+</html>

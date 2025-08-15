@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Test</title>
+</head>
+
+<body>
+    <h1>Registration API Test</h1>
+    <button id="testBtn">Test Registration</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testBtn').addEventListener('click', async function () {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                const formData = new FormData();
+                formData.append('first_name', 'Test');
+                formData.append('last_name', 'User');
+                formData.append('email', 'testuser' + Date.now() + '@example.com');
+                formData.append('phone', '0781234567');
+                formData.append('national_id', '1234' + String(Date.now()).substr(-12));
+                formData.append('password', 'testpassword123');
+                formData.append('confirm_password', 'testpassword123');
+                formData.append('province_id', '1');
+                formData.append('district_id', '1');
+                formData.append('sector_id', '1');
+                formData.append('cell_id', '1');
+
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+
+                const data = JSON.parse(responseText);
+
+                if (data.success) {
+                    resultDiv.innerHTML = `<div style="color: green;">✅ Success: ${data.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div style="color: red;">❌ Error: ${data.error || data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `<div style="color: red;">❌ Network Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+
+</html>

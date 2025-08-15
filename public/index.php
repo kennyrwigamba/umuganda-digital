@@ -112,11 +112,11 @@
                 <a href="#about"
                     class="block px-3 py-2 text-gray-700 hover:text-primary-600 font-medium rounded-lg hover:bg-gray-50 transition-colors">About</a>
                 <div class="flex flex-col space-y-2 pt-2">
-                    <a href="login.html"
+                    <a href="login.php"
                         class="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-3 py-2 rounded-lg hover:shadow-lg transition duration-300 font-medium text-center">
                         Login
                     </a>
-                    <a href="register.html"
+                    <a href="register.php"
                         class="border border-primary-600 text-primary-600 px-3 py-2 rounded-lg hover:bg-primary-50 transition duration-300 font-medium text-center">
                         Register
                     </a>
@@ -126,11 +126,11 @@
     </nav>
 
     <!-- Hero Section -->
-    <section id="home" class="relative min-h-screen flex items-center justify-center overflow-hidden"
+    <section id="home" class="relative min-h-screen flex items-center justify-center overflow-hidden py-4"
         style="background-image: url('images/umuganda-hero.png'); background-position: center; background-repeat: no-repeat; background-size: cover;">
         <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-primary-900/60"></div>
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="mb-8">
+            <div class="mb-8 pt-8">
                 <span
                     class="inline-block bg-primary-100 text-primary-800 text-sm font-semibold px-4 py-2 rounded-full mb-4 animate-fade-in">
                     🇷🇼 Empowering Rwanda's Communities
@@ -755,9 +755,9 @@
                         <li><a href="#how-it-works"
                                 class="text-gray-300 hover:text-primary-400 transition duration-200">How It Works</a>
                         </li>
-                        <li><a href="login.html"
+                        <li><a href="login.php"
                                 class="text-gray-300 hover:text-primary-400 transition duration-200">Login</a></li>
-                        <li><a href="register.html"
+                        <li><a href="register.php"
                                 class="text-gray-300 hover:text-primary-400 transition duration-200">Register</a></li>
                         <li><a href="#"
                                 class="text-gray-300 hover:text-primary-400 transition duration-200">Documentation</a>

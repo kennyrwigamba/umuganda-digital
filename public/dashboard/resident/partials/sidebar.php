@@ -1,14 +1,15 @@
-<?php 
-function active_link($link = null) {
-    $current_path = $_SERVER['REQUEST_URI'];
+<?php
+    function active_link($link = null)
+    {
+        $current_path = $_SERVER['REQUEST_URI'];
 
-    if ($current_path === '/public/dashboard/resident/'.$link) {
-      return 'text-primary-600 bg-primary-50 border border-primary-100';
-    } else {
-      return 'text-gray-700 hover:bg-gray-50 hover:text-primary-600';
+        if ($current_path === '/public/dashboard/resident/' . $link) {
+            return 'text-primary-600 bg-primary-50 border border-primary-100';
+        } else {
+            return 'text-gray-700 hover:bg-gray-50 hover:text-primary-600';
+        }
+
     }
-    
-}
 
 ?>
 
@@ -49,7 +50,7 @@ function active_link($link = null) {
     <!-- Navigation -->
     <nav class="mt-6 md:mt-6 px-4 space-y-2">
         <a href="index.php"
-            class="<?= active_link('index.php') ?> flex items-center space-x-3 px-4 py-3 rounded-xl font-medium">
+            class="<?php echo active_link('index.php')?> flex items-center space-x-3 px-4 py-3 rounded-xl font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="size-6">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -60,7 +61,7 @@ function active_link($link = null) {
         </a>
 
         <a href="attendance.php"
-            class="<?= active_link('attendance.php') ?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
+            class="<?php echo active_link('attendance.php')?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="size-6">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -69,8 +70,19 @@ function active_link($link = null) {
             <span>Attendance History</span>
         </a>
 
+        <a href="qr-code.php"
+            class="<?php echo active_link('qr-code.php')?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
+            </svg>
+            <span>QR Code</span>
+        </a>
+
         <a href="fines.php"
-            class="<?= active_link('fines.php') ?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
+            class="<?php echo active_link('fines.php')?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="size-6">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -80,7 +92,7 @@ function active_link($link = null) {
         </a>
 
         <a href="notices.php"
-            class="<?= active_link('notices.php') ?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
+            class="<?php echo active_link('notices.php')?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z">
@@ -90,7 +102,7 @@ function active_link($link = null) {
         </a>
 
         <a href="user-profile.php"
-            class="<?= active_link('user-profile.php') ?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
+            class="<?php echo active_link('user-profile.php')?> flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="size-6">
                 <path stroke-linecap="round" stroke-linejoin="round"

@@ -113,7 +113,7 @@
         <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden md:ml-0">
+        <div class="flex-1 flex flex-col md:ml-0">
 
             <!-- Top Navbar -->
             <?php include __DIR__ . '/partials/top-nav.php'; ?>

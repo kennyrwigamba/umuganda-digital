@@ -4,6 +4,9 @@
  * Handles routing when using `php -S` command
  */
 
+// Load environment variables
+require_once __DIR__ . '/src/helpers/env.php';
+
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Handle API routes

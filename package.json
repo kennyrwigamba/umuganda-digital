@@ -3,13 +3,15 @@
     "@tailwindcss/cli": "^4.1.11",
     "html5-qrcode": "^2.3.8",
     "qrcode": "^1.5.4",
-    "tailwindcss": "^4.1.11"
+    "tailwindcss": "^4.1.11",
+    "web-push": "^3.4.5"
   },
   "name": "umuganda-digital",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-vapid": "node generate-vapid.js"
   },
   "keywords": [],
   "author": "",

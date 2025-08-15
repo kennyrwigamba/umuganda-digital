@@ -36,16 +36,26 @@
 
                 <!-- User Menu -->
                 <div class="relative">
-                    <div class="flex items-center space-x-3">
+                    <button onclick="toggleUserDropdown()" class="flex items-center space-x-3 focus:outline-none">
                         <div
                             class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-sm">
                             <span class="text-white text-sm font-medium"><?php echo $initials; ?></span>
                         </div>
                         <span class="hidden md:block text-sm font-medium"><?php echo $fullName; ?></span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200" id="userMenuChevron"></i>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <a href="settings.php" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-user-edit mr-3 text-gray-400"></i>
+                            Edit Profile
+                        </a>
+                        <hr class="my-1 border-gray-200">
                         <button onclick="logout()" data-logout-btn
-                            class="flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+                            class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors">
+                            <i class="fas fa-sign-out-alt mr-3 text-gray-400"></i>
                             <span class="logout-text">Logout</span>
-                            <i class="fas fa-sign-out-alt text-xs"></i>
                         </button>
                     </div>
                 </div>
@@ -53,3 +63,29 @@
         </div>
     </div>
 </header>
+
+<script>
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    const chevron = document.getElementById('userMenuChevron');
+
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+    } else {
+        dropdown.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('userDropdown');
+    const userMenuButton = event.target.closest('button[onclick="toggleUserDropdown()"]');
+
+    if (!userMenuButton && !dropdown.contains(event.target)) {
+        dropdown.classList.add('hidden');
+        document.getElementById('userMenuChevron').style.transform = 'rotate(0deg)';
+    }
+});
+</script>

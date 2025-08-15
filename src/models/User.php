@@ -22,9 +22,9 @@ class User
     public function create($data)
     {
         $query = "INSERT INTO users (national_id, first_name, last_name, email, phone, password,
-                         cell_id, sector_id, district_id, province_id, cell, sector, district, province,
+                         cell_id, sector_id, district_id, province_id,
                          date_of_birth, gender, role, status, created_at)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->execute($query, [
             $data['national_id'],
@@ -37,16 +37,12 @@ class User
             $data['sector_id'] ?? null,
             $data['district_id'] ?? null,
             $data['province_id'] ?? null,
-            $data['cell'] ?? 'Not Set',
-            $data['sector'] ?? 'Not Set',
-            $data['district'] ?? 'Not Set',
-            $data['province'] ?? 'Not Set',
             $data['date_of_birth'] ?? null,
-            $data['gender'] ?? 'Not Set',
+            $data['gender'] ?? 'male',
             $data['role'] ?? 'resident',
             $data['status'] ?? 'active',
             $data['created_at'] ?? date('Y-m-d H:i:s'),
-        ], 'ssssssiiissssssssss');
+        ], 'ssssssiiissssss');
 
         $stmt->close();
         return $this->db->getLastInsertId();

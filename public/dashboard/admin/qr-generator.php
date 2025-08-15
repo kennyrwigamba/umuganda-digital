@@ -79,8 +79,16 @@
         }
 
         if ($resident) {
-            // Generate QR code data - simple user ID for now
-            $qrData = (string) $userId;
+            // Generate QR code data - JSON format for resident
+            $qrData = json_encode([
+                'type'         => 'umuganda_resident',
+                'id'           => $userId,
+                'name'         => $resident['first_name'] . ' ' . $resident['last_name'],
+                'cell'         => $resident['cell_name'] ?? 'N/A',
+                'sector'       => $sectorName,
+                'email'        => $resident['email'] ?? '',
+                'generated_at' => date('Y-m-d H:i:s'),
+            ]);
 
             // Use online QR code generator (temporary solution)
             $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($qrData);
@@ -132,7 +140,7 @@
                                 <h1 class="text-2xl font-bold text-gray-900">QR Code Generator</h1>
                             </div>
                             <p class="text-gray-600">
-                                Generate QR codes for residents in                                                                                                                                     <?php echo htmlspecialchars($sectorName); ?> Sector
+                                Generate QR codes for residents in                                                                                                                                                                                                       <?php echo htmlspecialchars($sectorName); ?> Sector
                             </p>
                         </div>
                         <div class="mt-4 sm:mt-0 flex gap-3">
@@ -165,7 +173,7 @@
                                     <?php echo htmlspecialchars($resident['first_name'] . ' ' . $resident['last_name']); ?>
                                 </h3>
                                 <p class="text-sm text-gray-600"><?php echo htmlspecialchars($resident['cell_name'] ?: 'N/A'); ?></p>
-                                <p class="text-xs text-gray-500">ID:                                                                                                                                         <?php echo $resident['user_id']; ?></p>
+                                <p class="text-xs text-gray-500">ID:                                                                                                                                                                                                             <?php echo $resident['user_id']; ?></p>
                             </div>
 
                             <!-- QR Code Area -->
@@ -268,7 +276,7 @@
         // Generate all QR codes using batch API
         async function generateAllQRCodes() {
             try {
-                const sectorId =                                 <?php echo $sectorId; ?>;
+                const sectorId =                                                                 <?php echo $sectorId; ?>;
                 const button = event.target;
                 const originalHtml = button.innerHTML;
 
@@ -346,7 +354,7 @@
             let htmlContent = `
                 <html>
                 <head>
-                    <title>QR Codes -                                      <?php echo htmlspecialchars($sectorName); ?> Sector</title>
+                    <title>QR Codes -                                                                           <?php echo htmlspecialchars($sectorName); ?> Sector</title>
                     <style>
                         body {
                             font-family: Arial, sans-serif;
@@ -448,7 +456,7 @@
         // Auto-generate QR codes on page load for better UX
         document.addEventListener('DOMContentLoaded', function() {
             // Optional: Auto-generate first few QR codes
-            const residents =                              <?php echo json_encode(array_slice(array_column($residents, 'user_id'), 0, 5)); ?>;
+            const residents =                                                           <?php echo json_encode(array_slice(array_column($residents, 'user_id'), 0, 5)); ?>;
             setTimeout(() => {
                 residents.forEach((userId, index) => {
                     setTimeout(() => {

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Chart.js Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 600px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Basic Chart.js Test</h1>
+
+    <h2>Test Chart 1 - Line Chart</h2>
+    <div class="chart-container">
+        <canvas id="testChart1"></canvas>
+    </div>
+
+    <h2>Test Chart 2 - Bar Chart</h2>
+    <div class="chart-container">
+        <canvas id="testChart2"></canvas>
+    </div>
+
+    <div id="debug-output"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Basic Chart.js test started...');
+
+            const debugOutput = document.getElementById('debug-output');
+
+            function addDebug(message) {
+                console.log(message);
+                debugOutput.innerHTML += '<p>' + message + '</p>';
+            }
+
+            addDebug('Chart.js version: ' + Chart.version);
+            addDebug('DOM loaded, starting chart creation...');
+
+            // Test Chart 1 - Line Chart
+            try {
+                const ctx1 = document.getElementById('testChart1');
+                addDebug('Canvas 1 found: ' + (ctx1 ? 'YES' : 'NO'));
+
+                const context1 = ctx1.getContext('2d');
+                addDebug('Context 1 created: ' + (context1 ? 'YES' : 'NO'));
+
+                const chart1 = new Chart(context1, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                        datasets: [{
+                            label: 'Test Data',
+                            data: [12, 19, 3, 5, 2],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                addDebug('Line chart created successfully!');
+
+            } catch (error) {
+                addDebug('ERROR creating line chart: ' + error.message);
+            }
+
+            // Test Chart 2 - Bar Chart
+            try {
+                const ctx2 = document.getElementById('testChart2');
+                addDebug('Canvas 2 found: ' + (ctx2 ? 'YES' : 'NO'));
+
+                const context2 = ctx2.getContext('2d');
+                addDebug('Context 2 created: ' + (context2 ? 'YES' : 'NO'));
+
+                const chart2 = new Chart(context2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['A', 'B', 'C', 'D'],
+                        datasets: [{
+                            label: 'Collections',
+                            data: [100, 200, 150, 300],
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            borderColor: '#16a34a',
+                            borderWidth: 1
+                        }, {
+                            label: 'Pending',
+                            data: [50, 100, 75, 25],
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            borderColor: '#dc2626',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                addDebug('Bar chart created successfully!');
+
+            } catch (error) {
+                addDebug('ERROR creating bar chart: ' + error.message);
+            }
+        });
+    </script>
+</body>
+
+</html>

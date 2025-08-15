@@ -25,7 +25,7 @@
     $adminId   = $_SESSION['user_id'];
     $adminInfo = $user->findById($adminId);
 
-        if (! $adminInfo) {
+    if (! $adminInfo) {
         // User not found, logout and redirect
         session_destroy();
         header('Location: ../../login.php?message=session_expired');
@@ -33,10 +33,10 @@
     }
 
     // Extract user information for display
-    $firstName  = htmlspecialchars($adminInfo['first_name']);
-    $lastName   = htmlspecialchars($adminInfo['last_name']);
-    $fullName   = $firstName . ' ' . $lastName;
-    $initials   = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+    $firstName = htmlspecialchars($adminInfo['first_name']);
+    $lastName  = htmlspecialchars($adminInfo['last_name']);
+    $fullName  = $firstName . ' ' . $lastName;
+    $initials  = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
 
     // Get admin's sector assignment
     $adminSectorQuery = "
@@ -61,7 +61,7 @@ LIMIT 1";
     $sectorName   = $adminSector['sector_name'];
     $districtName = $adminSector['district_name'];
 
-    // Date range handling
+                                                                                    // Date range handling
     $startDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01'); // First day of current month
     $endDate   = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');      // Today
 
@@ -105,10 +105,10 @@ LIMIT 1";
         $fineQuery = "
     SELECT
         COUNT(*) as total_fines,
-        SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as total_collected,
-        SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as total_pending,
-        SUM(amount) as total_amount,
-        ROUND(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) / SUM(amount) * 100, 1) as collection_rate
+        SUM(CASE WHEN f.status = 'paid' THEN f.amount ELSE 0 END) as total_collected,
+        SUM(CASE WHEN f.status = 'pending' THEN f.amount ELSE 0 END) as total_pending,
+        SUM(f.amount) as total_amount,
+        ROUND(SUM(CASE WHEN f.status = 'paid' THEN f.amount ELSE 0 END) / SUM(f.amount) * 100, 1) as collection_rate
     FROM fines f
     JOIN users u ON f.user_id = u.id
     WHERE u.sector_id = ? AND f.created_at BETWEEN ? AND ?";
@@ -122,11 +122,11 @@ LIMIT 1";
         $eventQuery = "
     SELECT
         COUNT(*) as total_events,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_events,
-        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_events,
-        ROUND(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) / COUNT(*) * 100, 1) as success_rate
-    FROM umuganda_events
-    WHERE sector_id = ? AND event_date BETWEEN ? AND ?";
+        SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) as completed_events,
+        SUM(CASE WHEN e.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_events,
+        ROUND(SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) / COUNT(*) * 100, 1) as success_rate
+    FROM umuganda_events e
+    WHERE e.sector_id = ? AND e.event_date BETWEEN ? AND ?";
 
         $stmt = $connection->prepare($eventQuery);
         $stmt->bind_param('iss', $sectorId, $startDate, $endDate);
@@ -167,7 +167,25 @@ LIMIT 1";
         $stmt->execute();
         $attendanceTrends = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-        // 6. CELL PERFORMANCE (if applicable)
+        // 6. MONTHLY REVENUE TRENDS (for chart)
+        $revenueTrendsQuery = "
+    SELECT
+        DATE_FORMAT(f.created_at, '%Y-%m') as month,
+        SUM(CASE WHEN f.status = 'paid' THEN f.amount ELSE 0 END) as collected,
+        SUM(CASE WHEN f.status = 'pending' THEN f.amount ELSE 0 END) as pending,
+        COUNT(*) as total_fines
+    FROM fines f
+    JOIN users u ON f.user_id = u.id
+    WHERE u.sector_id = ? AND f.created_at BETWEEN ? AND ?
+    GROUP BY DATE_FORMAT(f.created_at, '%Y-%m')
+    ORDER BY month";
+
+        $stmt = $connection->prepare($revenueTrendsQuery);
+        $stmt->bind_param('iss', $sectorId, $startDate, $endDate);
+        $stmt->execute();
+        $revenueTrends = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        // 7. CELL PERFORMANCE (if applicable)
         $cellQuery = "
     SELECT
         c.name as cell_name,
@@ -211,6 +229,7 @@ LIMIT 1";
         $completedEvents  = 0;
         $avgAttendance    = 0;
         $attendanceTrends = [];
+        $revenueTrends    = [];
         $cellPerformance  = [];
     }
 
@@ -262,28 +281,28 @@ LIMIT 1";
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                         <div class="flex flex-wrap gap-2">
                             <a href="?period=7"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == '7') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                                class="px-4 py-2 text-sm                                                                                                                                                                         <?php echo($period == '7') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
                                 Last 7 Days
                             </a>
                             <a href="?period=30"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == '30') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                                class="px-4 py-2 text-sm                                                                                                                                                                         <?php echo($period == '30') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
                                 Last 30 Days
                             </a>
                             <a href="?period=90"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == '90') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                                class="px-4 py-2 text-sm                                                                                                                                                                         <?php echo($period == '90') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
                                 Last 3 Months
                             </a>
                             <a href="?period=year"
-                                class="px-4 py-2 text-sm                                                         <?php echo($period == 'year') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                                class="px-4 py-2 text-sm                                                                                                                                                                         <?php echo($period == 'year') ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
                                 This Year
                             </a>
                             <button onclick="toggleCustomRange()"
-                                class="px-4 py-2 text-sm                                                         <?php echo(isset($_GET['start_date']) && isset($_GET['end_date'])) ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
+                                class="px-4 py-2 text-sm                                                                                                                                                                         <?php echo(isset($_GET['start_date']) && isset($_GET['end_date'])) ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'; ?> rounded-lg font-medium transition-colors">
                                 Custom Range
                             </button>
                         </div>
 
-                        <form method="GET" id="customRangeForm" class="flex items-center space-x-3                                                                                                   <?php echo(! isset($_GET['start_date'])) ? 'hidden' : ''; ?>">
+                        <form method="GET" id="customRangeForm" class="flex items-center space-x-3                                                                                                                                                                                                                                                                                                       <?php echo(! isset($_GET['start_date'])) ? 'hidden' : ''; ?>">
                             <input type="date" name="start_date" value="<?php echo htmlspecialchars($startDate); ?>"
                                 class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <span class="text-gray-500">to</span>
@@ -310,7 +329,7 @@ LIMIT 1";
                             </div>
                         </div>
                         <div class="flex items-center justify-between text-blue-100 text-sm">
-                            <span>Avg.                                       <?php echo number_format($avgAttendance); ?> present</span>
+                            <span>Avg.                                                                                                                   <?php echo number_format($avgAttendance); ?> present</span>
                             <span class="flex items-center">
                                 <i class="fas fa-<?php echo($attendanceRate >= 80) ? 'arrow-up' : (($attendanceRate >= 60) ? 'minus' : 'arrow-down'); ?> mr-1"></i>
                                 <?php echo($attendanceRate >= 80) ? 'Good' : (($attendanceRate >= 60) ? 'Fair' : 'Low'); ?>
@@ -395,7 +414,7 @@ LIMIT 1";
                                 </button>
                             </div>
                         </div>
-                        <div class="chart-container">
+                        <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
                             <canvas id="attendanceTrendsChart"></canvas>
                         </div>
                     </div>
@@ -414,7 +433,7 @@ LIMIT 1";
                                 </button>
                             </div>
                         </div>
-                        <div class="chart-container">
+                        <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
                             <canvas id="revenueChart"></canvas>
                         </div>
                     </div>
@@ -486,7 +505,7 @@ LIMIT 1";
                                 </div>
                                 <div class="mt-2">
                                     <div class="text-sm font-medium text-gray-900">Attendance Goal</div>
-                                    <div class="text-xs text-gray-500">Target:                                                                               <?php echo $attendanceTarget; ?>%</div>
+                                    <div class="text-xs text-gray-500">Target:                                                                                                                                                                                                                                           <?php echo $attendanceTarget; ?>%</div>
                                 </div>
                             </div>
 
@@ -513,7 +532,7 @@ LIMIT 1";
                                 </div>
                                 <div class="mt-2">
                                     <div class="text-sm font-medium text-gray-900">Collection Goal</div>
-                                    <div class="text-xs text-gray-500">Target:                                                                               <?php echo number_format($collectionTarget); ?> RWF</div>
+                                    <div class="text-xs text-gray-500">Target:                                                                                                                                                                                                                                           <?php echo number_format($collectionTarget); ?> RWF</div>
                                 </div>
                             </div>
                         </div>
@@ -561,7 +580,7 @@ LIMIT 1";
                                 <div class="flex-1">
                                     <div class="text-sm font-medium text-gray-900">Highest Collection</div>
                                     <div class="text-xs text-gray-500">
-                                        Total:                                               <?php echo number_format($fineStats['total_collected'] ?? 0); ?> RWF
+                                        Total:                                                                                                                                           <?php echo number_format($fineStats['total_collected'] ?? 0); ?> RWF
                                     </div>
                                 </div>
                                 <div class="text-lg font-bold text-green-500">💰</div>
@@ -833,42 +852,84 @@ LIMIT 1";
         const closeReportModal = document.getElementById('closeReportModal');
         const cancelReportModal = document.getElementById('cancelReportModal');
 
-        generateReportBtn.addEventListener('click', () => {
-            generateReportModal.classList.remove('hidden');
-        });
+        // Only add event listeners if elements exist
+        if (generateReportBtn && generateReportModal) {
+            generateReportBtn.addEventListener('click', () => {
+                generateReportModal.classList.remove('hidden');
+            });
+        }
 
-        closeReportModal.addEventListener('click', () => {
-            generateReportModal.classList.add('hidden');
-        });
+        if (closeReportModal && generateReportModal) {
+            closeReportModal.addEventListener('click', () => {
+                generateReportModal.classList.add('hidden');
+            });
+        }
 
-        cancelReportModal.addEventListener('click', () => {
-            generateReportModal.classList.add('hidden');
-        });
+        if (cancelReportModal && generateReportModal) {
+            cancelReportModal.addEventListener('click', () => {
+                generateReportModal.classList.add('hidden');
+            });
+        }
 
         // Close modal on outside click
-        generateReportModal.addEventListener('click', (e) => {
-            if (e.target === generateReportModal) {
-                generateReportModal.classList.add('hidden');
-            }
-        });
+        if (generateReportModal) {
+            generateReportModal.addEventListener('click', (e) => {
+                if (e.target === generateReportModal) {
+                    generateReportModal.classList.add('hidden');
+                }
+            });
+        }
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', function () {
+            console.log('Reports page loaded, initializing charts...');
+
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded!');
+                document.getElementById('attendanceTrendsChart').outerHTML = '<div class="text-center p-4 text-red-600 bg-red-50 rounded">Chart.js library not loaded!</div>';
+                document.getElementById('revenueChart').outerHTML = '<div class="text-center p-4 text-red-600 bg-red-50 rounded">Chart.js library not loaded!</div>';
+                return;
+            }
+
+            console.log('Chart.js version:', Chart.version);
+
+            // Check if canvas elements exist
+            const attendanceCanvas = document.getElementById('attendanceTrendsChart');
+            const revenueCanvas = document.getElementById('revenueChart');
+
+            console.log('Attendance canvas found:', !!attendanceCanvas);
+            console.log('Revenue canvas found:', !!revenueCanvas);
+
+            if (!attendanceCanvas || !revenueCanvas) {
+                console.error('Canvas elements not found!');
+                return;
+            }
+
             // Initialize Charts with dynamic data
-            // Attendance Trends Chart
-            const attendanceTrendsCtx = document.getElementById('attendanceTrendsChart').getContext('2d');
+            try {
+                // Attendance Trends Chart
+                console.log('Initializing attendance trends chart...');
+                const attendanceTrendsCtx = attendanceCanvas.getContext('2d');
+                console.log('Attendance context created:', !!attendanceTrendsCtx);
 
-            // Dynamic chart data from PHP
-            const attendanceTrendData =                                        <?php echo json_encode($attendanceTrends); ?>;
-            const chartLabels = attendanceTrendData.map(item => item.month);
-            const attendanceRates = attendanceTrendData.map(item => parseFloat(item.attendance_rate) || 0);
-            const targetData = new Array(chartLabels.length).fill(90); // 90% target
+                // Dynamic chart data from PHP
+                const attendanceTrendData =                                            <?php echo json_encode($attendanceTrends); ?>;
+                console.log('Attendance trend data:', attendanceTrendData);
+                console.log('Attendance trend data length:', attendanceTrendData.length);
 
-            const attendanceTrendsChart = new Chart(attendanceTrendsCtx, {
-                type: 'line',
-                data: {
-                    labels: chartLabels.length > 0 ? chartLabels : ['Current Period'],
-                    datasets: [{
+                const chartLabels = attendanceTrendData.length > 0 ? attendanceTrendData.map(item => item.month) : ['Current Period'];
+                const attendanceRates = attendanceTrendData.length > 0 ? attendanceTrendData.map(item => parseFloat(item.rate) || 0) : [<?php echo $attendanceRate; ?>];
+
+                console.log('Chart labels:', chartLabels);
+                console.log('Attendance rates:', attendanceRates);
+                const targetData = new Array(chartLabels.length).fill(90); // 90% target
+
+                const attendanceTrendsChart = new Chart(attendanceTrendsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
                         label: 'Attendance Rate %',
                         data: attendanceRates.length > 0 ? attendanceRates : [<?php echo $attendanceStats['attendance_rate'] ?? 0; ?>],
                         borderColor: '#3b82f6',
@@ -926,28 +987,40 @@ LIMIT 1";
                 }
             });
 
-            // Revenue Chart with dynamic data
-            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            console.log('Attendance chart created successfully!');
 
-            // For now, show current period data - can be enhanced with monthly trends
-            const currentCollected =                                     <?php echo $fineStats['total_collected'] ?? 0; ?>;
-            const currentOutstanding =                                       <?php echo $fineStats['total_outstanding'] ?? 0; ?>;
+            // Revenue Chart with dynamic data
+            console.log('Initializing revenue chart...');
+            const revenueCtx = revenueCanvas.getContext('2d');
+            console.log('Revenue context created:', !!revenueCtx);
+
+            // Monthly revenue trend data
+            const revenueTrendData =                                                                         <?php echo json_encode($revenueTrends); ?>;
+            console.log('Revenue trend data:', revenueTrendData);
+
+            const revenueLabels = revenueTrendData.length > 0 ? revenueTrendData.map(item => item.month) : chartLabels;
+            const collectedData = revenueTrendData.length > 0 ? revenueTrendData.map(item => parseFloat(item.collected) || 0) : [<?php echo $totalCollected; ?>];
+            const pendingData = revenueTrendData.length > 0 ? revenueTrendData.map(item => parseFloat(item.pending) || 0) : [<?php echo $totalPending; ?>];
+
+            console.log('Revenue labels:', revenueLabels);
+            console.log('Collected data:', collectedData);
+            console.log('Pending data:', pendingData);
 
             const revenueChart = new Chart(revenueCtx, {
                 type: 'bar',
                 data: {
-                    labels: chartLabels.length > 0 ? chartLabels : ['Current Period'],
+                    labels: revenueLabels.length > 0 ? revenueLabels : ['Current Period'],
                     datasets: [{
                         label: 'Collections (RWF)',
-                        data: [currentCollected],
+                        data: collectedData,
                         backgroundColor: 'rgba(34, 197, 94, 0.8)',
                         borderColor: '#16a34a',
                         borderWidth: 1,
                         borderRadius: 6,
                         borderSkipped: false,
                     }, {
-                        label: 'Outstanding (RWF)',
-                        data: [currentOutstanding],
+                        label: 'Pending (RWF)',
+                        data: pendingData,
                         backgroundColor: 'rgba(239, 68, 68, 0.8)',
                         borderColor: '#dc2626',
                         borderWidth: 1,
@@ -987,6 +1060,90 @@ LIMIT 1";
                     }
                 }
             });
+
+        } catch (error) {
+            console.error('Error initializing charts:', error);
+            console.error('Error details:', error.message);
+            console.error('Error stack:', error.stack);
+            console.log('Attempting to create fallback charts...');
+
+            // Show error in the charts
+            document.getElementById('attendanceTrendsChart').outerHTML = '<div class="text-center p-4 text-red-600 bg-red-50 rounded">Chart Error: ' + error.message + '</div>';
+            document.getElementById('revenueChart').outerHTML = '<div class="text-center p-4 text-red-600 bg-red-50 rounded">Chart Error: ' + error.message + '</div>';
+            return;
+
+            // Fallback: Create simple charts with test data
+            try {
+                const attendanceCtx = document.getElementById('attendanceTrendsChart');
+                if (attendanceCtx) {
+                    const fallbackAttendanceChart = new Chart(attendanceCtx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: ['Current Period'],
+                            datasets: [{
+                                label: 'Attendance Rate %',
+                                data: [<?php echo $attendanceRate; ?>],
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+                    console.log('Fallback attendance chart created');
+                }
+
+                const revenueCtx = document.getElementById('revenueChart');
+                if (revenueCtx) {
+                    const fallbackRevenueChart = new Chart(revenueCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['Current Period'],
+                            datasets: [{
+                                label: 'Collections (RWF)',
+                                data: [<?php echo $totalCollected; ?>],
+                                backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                                borderColor: '#16a34a',
+                                borderWidth: 1
+                            }, {
+                                label: 'Pending (RWF)',
+                                data: [<?php echo $totalPending; ?>],
+                                backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                                borderColor: '#dc2626',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                    console.log('Fallback revenue chart created');
+                }
+            } catch (fallbackError) {
+                console.error('Fallback chart creation also failed:', fallbackError);
+                // Show error message
+                const errorMsg = '<div class="text-center p-4 text-red-600 bg-red-50 rounded">Error loading charts. Please check the console for details.</div>';
+                const attChart = document.getElementById('attendanceTrendsChart');
+                const revChart = document.getElementById('revenueChart');
+                if (attChart) attChart.outerHTML = errorMsg;
+                if (revChart) revChart.outerHTML = errorMsg;
+            }
+        }
         });
     </script>
 

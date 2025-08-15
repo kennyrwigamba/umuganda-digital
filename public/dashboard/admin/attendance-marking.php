@@ -46,6 +46,23 @@
         exit;
     }
 
+                               // Get admin settings for fine amounts
+    $defaultFineAmount = 1000; // fallback
+    try {
+        $settingsQuery = "SELECT default_fine_amount FROM admin_settings WHERE admin_id = ? LIMIT 1";
+        $settingsStmt  = $connection->prepare($settingsQuery);
+        $settingsStmt->bind_param('i', $adminId);
+        $settingsStmt->execute();
+        $settingsResult = $settingsStmt->get_result();
+        $settings       = $settingsResult->fetch_assoc();
+
+        if ($settings && isset($settings['default_fine_amount'])) {
+            $defaultFineAmount = (float) $settings['default_fine_amount'];
+        }
+    } catch (Exception $e) {
+        // Use fallback amount if query fails
+    }
+
     // Extract user information for display
     $firstName = htmlspecialchars($adminInfo['first_name']);
     $lastName  = htmlspecialchars($adminInfo['last_name']);
@@ -54,13 +71,13 @@
 
     // Get admin's assigned sector from admin_assignments table
     $adminSectorQuery = "
-        SELECT s.name as sector_name, s.id as sector_id, s.code as sector_code,
-               d.name as district_name, d.id as district_id
-        FROM admin_assignments aa
-        JOIN sectors s ON aa.sector_id = s.id
-        JOIN districts d ON s.district_id = d.id
-        WHERE aa.admin_id = ? AND aa.is_active = 1
-        LIMIT 1";
+    SELECT s.name as sector_name, s.id as sector_id, s.code as sector_code,
+           d.name as district_name, d.id as district_id
+    FROM admin_assignments aa
+    JOIN sectors s ON aa.sector_id = s.id
+    JOIN districts d ON s.district_id = d.id
+    WHERE aa.admin_id = ? AND aa.is_active = 1
+    LIMIT 1";
 
     $stmt = $connection->prepare($adminSectorQuery);
     $stmt->bind_param('i', $adminId);
@@ -81,12 +98,12 @@
             $stmt->execute();
             $sectorData   = $stmt->get_result()->fetch_assoc();
             $sectorId     = $adminInfo['sector_id'];
-            $sectorName   = $sectorData ? $sectorData['name'] : 'Kimironko'; // Default for demo
+            $sectorName   = $sectorData ? $sectorData['name'] : 'Kimironko';
             $sectorCode   = $sectorData ? $sectorData['code'] : 'KIM';
-            $districtName = 'Gasabo'; // Default district
+            $districtName = 'Gasabo';
         } else {
-                               // Default sector for testing
-            $sectorId     = 1; // Assuming Kimironko has ID 1
+            // Default sector for testing
+            $sectorId     = 1;
             $sectorName   = 'Kimironko';
             $sectorCode   = 'KIM';
             $districtName = 'Gasabo';
@@ -99,16 +116,15 @@
     $searchTerm      = $_GET['search'] ?? '';
 
     // Get current or upcoming Umuganda events for this sector
-    // First, let's check what columns exist and build the query accordingly
     try {
         $eventsQuery = "
-            SELECT e.id, e.title, e.description, e.event_date, e.start_time, e.end_time,
-                   e.location, e.status
-            FROM umuganda_events e
-            WHERE e.sector_id = ?
-            AND e.status IN ('scheduled', 'ongoing', 'completed')
-            ORDER BY e.event_date DESC, e.start_time DESC
-            LIMIT 10";
+        SELECT e.id, e.title, e.description, e.event_date, e.start_time, e.end_time,
+               e.location, e.status
+        FROM umuganda_events e
+        WHERE e.sector_id = ?
+        AND e.status IN ('scheduled', 'ongoing', 'completed')
+        ORDER BY e.event_date DESC, e.start_time DESC
+        LIMIT 10";
 
         $eventsStmt = $connection->prepare($eventsQuery);
         $eventsStmt->bind_param('i', $sectorId);
@@ -119,12 +135,11 @@
         // If no events found with sector_id, try with sector name (fallback)
         if (empty($availableEvents)) {
             $fallbackQuery = "
-                SELECT e.id, e.title, e.description, e.event_date, e.start_time, e.end_time,
-                       e.location, e.status
-                FROM umuganda_events e
-                WHERE e.status IN ('scheduled', 'ongoing', 'completed')
-                ORDER BY e.event_date DESC, e.start_time DESC
-                LIMIT 10";
+            SELECT e.id, e.title, e.description, e.event_date, e.start_time, e.end_time,
+                   e.location, e.status
+            FROM umuganda_events e
+            ORDER BY e.event_date DESC, e.start_time DESC
+            LIMIT 10";
 
             $fallbackStmt = $connection->prepare($fallbackQuery);
             $fallbackStmt->execute();
@@ -162,12 +177,11 @@
     } else {
         // Get all residents in the sector
         try {
-            // Use proper foreign key relationships for location hierarchy
             $query = "SELECT u.id as user_id, u.first_name, u.last_name, u.email,
-                             c.name as cell_name, u.cell_id
-                      FROM users u
-                      LEFT JOIN cells c ON u.cell_id = c.id
-                      WHERE u.role = 'resident' AND u.status = 'active' AND u.sector_id = ?";
+                         c.name as cell_name, u.cell_id
+                  FROM users u
+                  LEFT JOIN cells c ON u.cell_id = c.id
+                  WHERE u.role = 'resident' AND u.status = 'active' AND u.sector_id = ?";
 
             $params = [$sectorId];
             $types  = 'i';
@@ -199,11 +213,11 @@
 
             // Get existing attendance records for the selected event
             $attendanceQuery = "
-                SELECT a.user_id, a.status, a.check_in_time, a.notes, a.excuse_reason,
-                       f.amount as fine_amount
-                FROM attendance a
-                LEFT JOIN fines f ON a.id = f.attendance_id AND f.status != 'waived'
-                WHERE a.event_id = ?";
+            SELECT a.user_id, a.status, a.check_in_time, a.notes, a.excuse_reason,
+                   f.amount as fine_amount
+            FROM attendance a
+            LEFT JOIN fines f ON a.id = f.attendance_id AND f.status != 'waived'
+            WHERE a.event_id = ?";
 
             $attendanceStmt = $connection->prepare($attendanceQuery);
             $attendanceStmt->bind_param('i', $selectedEventId);
@@ -217,12 +231,12 @@
                 $attendanceLookup[$record['user_id']] = $record;
             }
 
-            // Get unique cells for filter (using location hierarchy)
+            // Get unique cells for filter
             $cellQuery = "SELECT DISTINCT c.name as cell_name
-                         FROM users u
-                         JOIN cells c ON u.cell_id = c.id
-                         WHERE u.role = 'resident' AND u.sector_id = ?
-                         ORDER BY c.name";
+                     FROM users u
+                     JOIN cells c ON u.cell_id = c.id
+                     WHERE u.role = 'resident' AND u.sector_id = ?
+                     ORDER BY c.name";
             $cellStmt = $connection->prepare($cellQuery);
             $cellStmt->bind_param('i', $sectorId);
             $cellStmt->execute();
@@ -246,6 +260,25 @@
             $attendanceData = json_decode($_POST['attendance_data'], true);
 
             foreach ($attendanceData as $data) {
+                // Set current datetime if no check_in_time provided or if it's empty
+                $providedTime = $data['check_in_time'] ?? '';
+
+                if (! empty($providedTime) && $providedTime !== '00:00:00') {
+                    // If time is provided, combine with today's date
+                    $checkInTime = date('Y-m-d') . ' ' . $providedTime;
+                } else {
+                    // Use current datetime
+                    $checkInTime = date('Y-m-d H:i:s');
+                }
+
+                // Ensure notes include marking method if not already present
+                $notes = $data['notes'] ?? '';
+                if (empty($notes)) {
+                    $notes = 'Manual entry via attendance marking';
+                } elseif (strpos($notes, 'Manual entry') === false && strpos($notes, 'QR code') === false) {
+                    $notes .= ' | Manual entry via attendance marking';
+                }
+
                 // Check if attendance record already exists
                 $checkQuery = "SELECT id FROM attendance WHERE user_id = ? AND event_id = ?";
                 $checkStmt  = $connection->prepare($checkQuery);
@@ -256,32 +289,30 @@
 
                 if ($existingRecord) {
                     // Update existing record
-                    $updateQuery = "UPDATE attendance
-                                   SET status = ?, check_in_time = ?, notes = ?, excuse_reason = ?, recorded_by = ?, updated_at = NOW()
-                                   WHERE user_id = ? AND event_id = ?";
+                    $updateQuery = "UPDATE attendance SET status = ?, check_in_time = ?, notes = ?, excuse_reason = ?, recorded_by = ?, updated_at = NOW()
+                               WHERE id = ?";
                     $updateStmt = $connection->prepare($updateQuery);
-                    $updateStmt->bind_param('ssssiii',
+                    $updateStmt->bind_param('ssssii',
                         $data['status'],
-                        $data['check_in_time'],
-                        $data['notes'],
+                        $checkInTime,
+                        $notes,
                         $data['excuse_reason'],
                         $adminId,
-                        $data['user_id'],
-                        $selectedEventId
+                        $existingRecord['id']
                     );
                     $updateStmt->execute();
                     $attendanceId = $existingRecord['id'];
                 } else {
                     // Insert new record
                     $insertQuery = "INSERT INTO attendance (user_id, event_id, status, check_in_time, notes, excuse_reason, recorded_by, created_at)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+                               VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
                     $insertStmt = $connection->prepare($insertQuery);
                     $insertStmt->bind_param('iissssi',
                         $data['user_id'],
                         $selectedEventId,
                         $data['status'],
-                        $data['check_in_time'],
-                        $data['notes'],
+                        $checkInTime,
+                        $notes,
                         $data['excuse_reason'],
                         $adminId
                     );
@@ -305,19 +336,12 @@
                         $updateFineStmt->bind_param('di', $data['fine_amount'], $fineExists['id']);
                         $updateFineStmt->execute();
                     } else {
-                        // Create new fine
-                        $fineReason      = ($data['status'] === 'late') ? 'late_arrival' : (($data['status'] === 'absent') ? 'absence' : 'other');
+                        // Insert new fine with all required fields
                         $insertFineQuery = "INSERT INTO fines (user_id, event_id, attendance_id, amount, reason, status, due_date, created_by, created_at)
-                                           VALUES (?, ?, ?, ?, ?, 'unpaid', DATE_ADD(NOW(), INTERVAL 30 DAY), ?, NOW())";
+                                       VALUES (?, ?, ?, ?, ?, 'pending', DATE_ADD(NOW(), INTERVAL 30 DAY), ?, NOW())";
                         $insertFineStmt = $connection->prepare($insertFineQuery);
-                        $insertFineStmt->bind_param('iiidsi',
-                            $data['user_id'],
-                            $selectedEventId,
-                            $attendanceId,
-                            $data['fine_amount'],
-                            $fineReason,
-                            $adminId
-                        );
+                        $reason         = $data['status'] === 'late' ? 'late_arrival' : 'absence';
+                        $insertFineStmt->bind_param('iiidsi', $data['user_id'], $selectedEventId, $attendanceId, $data['fine_amount'], $reason, $adminId);
                         $insertFineStmt->execute();
                     }
                 }
@@ -349,33 +373,16 @@
         <!-- Top Navigation -->
         <?php include __DIR__ . '/partials/top-nav.php'; ?>
 
-        <!-- Bulk Attendance Marking Content -->
+        <!-- Main Content Area -->
         <main class="flex-1 p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- Page Header -->
                 <div class="mb-6">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <div class="flex items-center mb-2">
-                                <button onclick="window.location.href='attendance-tracking.php'"
-                                    class="mr-3 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                                    <i class="fas fa-arrow-left"></i>
-                                </button>
-                                <h1 class="text-2xl font-bold text-gray-900">Bulk Attendance Marking</h1>
-                            </div>
-                            <p class="text-gray-600">
-                                <?php if ($selectedEvent): ?>
-                                    Mark attendance for <strong><?php echo htmlspecialchars($selectedEvent['title']); ?></strong> in<?php echo htmlspecialchars($sectorName); ?> Sector
-                                    <br><span class="text-sm text-gray-500">
-                                        📅                                                                                                                                                                                 <?php echo date('F j, Y', strtotime($selectedEvent['event_date'])); ?> at<?php echo date('g:i A', strtotime($selectedEvent['start_time'])); ?>
-                                        | 📍<?php echo htmlspecialchars($selectedEvent['location']); ?>
-                                        | Status: <span class="px-2 py-1 text-xs rounded-full<?php echo $selectedEvent['status'] === 'completed' ? 'bg-green-100 text-green-800' : ($selectedEvent['status'] === 'ongoing' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'); ?>">
-                                            <?php echo ucfirst($selectedEvent['status']); ?>
-                                        </span>
-                                    </span>
-                                <?php else: ?>
-                                    No event selected
-                                <?php endif; ?>
+                            <h1 class="text-2xl font-bold text-gray-900">Bulk Attendance Marking</h1>
+                            <p class="mt-1 text-sm text-gray-600">
+                                Mark attendance for multiple residents at once for <strong><?php echo htmlspecialchars($sectorName); ?></strong> sector
                             </p>
                             <?php if (isset($error)): ?>
                                 <div class="mt-2 text-red-600 text-sm">Error:<?php echo htmlspecialchars($error); ?></div>
@@ -392,11 +399,6 @@
                                 class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                                 <i class="fas fa-check-double mr-2"></i>
                                 Mark All Present
-                            </button>
-                            <button onclick="saveAllAttendance()"
-                                class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
-                                <i class="fas fa-save mr-2"></i>
-                                Save Attendance
                             </button>
                         </div>
                     </div>
@@ -415,7 +417,7 @@
                                         <option value="">No events available</option>
                                     <?php else: ?>
 <?php foreach ($availableEvents as $event): ?>
-                                            <option value="<?php echo $event['id']; ?>"<?php echo $selectedEventId == $event['id'] ? 'selected' : ''; ?>>
+                                            <option value="<?php echo $event['id']; ?>"<?php echo $selectedEventId == $event['id'] ? ' selected' : ''; ?>>
                                                 <?php echo htmlspecialchars($event['title']); ?> -
                                                 <?php echo date('M j, Y', strtotime($event['event_date'])); ?>
                                                 (<?php echo ucfirst($event['status']); ?>)
@@ -460,14 +462,14 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-gray-700">Attendance Progress</span>
-                        <span class="text-sm text-gray-600" id="progressText">0 of                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <?php echo count($residents); ?> marked</span>
+                        <span class="text-sm text-gray-600" id="progressText">0 of                                                                                                                                                                                                                                                                                                                                                                                                                           <?php echo count($residents); ?> marked</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2">
                         <div class="bg-primary-600 h-2 rounded-full transition-all duration-300" id="progressBar" style="width: 0%"></div>
                     </div>
                 </div>
 
-                <!-- QR Scanner Section (Hidden by default) -->
+                <!-- QR Scanner Section -->
                 <div id="qrScannerSection" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 hidden">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">📱 QR Code Scanner</h3>
@@ -489,6 +491,7 @@
                                     <li>2. <strong>Click "Start Scanner"</strong> and allow camera access</li>
                                     <li>3. <strong>Scan resident QR codes</strong> - attendance will be marked automatically</li>
                                     <li>4. <strong>View real-time progress</strong> in the recent scans section</li>
+                                    <li>5. <strong>Duplicate prevention:</strong> Each user can only be scanned once per event</li>
                                 </ol>
                             </div>
                             <div>
@@ -509,13 +512,7 @@
                         <!-- Scanner Column -->
                         <div>
                             <h4 class="text-md font-medium text-gray-900 mb-3">📷 Camera Scanner</h4>
-                            <div id="qrReader" class="w-full max-w-md mx-auto bg-gray-100 rounded-lg h-64 flex items-center justify-center">
-                                <div class="text-center">
-                                    <i class="fas fa-qrcode text-4xl text-gray-400 mb-2"></i>
-                                    <p class="text-gray-600">Click "Start Scanner" to begin</p>
-                                    <p class="text-xs text-gray-500 mt-2">Ensure good lighting for best results</p>
-                                </div>
-                            </div>
+                            <div id="qrReader" class="w-full max-w-md mx-auto bg-gray-100 rounded-lg min-h-64"></div>
                             <div class="mt-4 flex gap-3">
                                 <button onclick="startQRScanner()" id="startScanBtn"
                                     class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors shadow-sm">
@@ -621,7 +618,8 @@
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <input type="checkbox" class="resident-checkbox w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                                     data-user-id="<?php echo $resident['user_id']; ?>"
-                                                    onchange="updateProgress()"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           <?php echo $isMarked ? 'checked' : ''; ?>>
+                                                    onchange="updateProgress()"
+                                                    <?php echo $isMarked ? 'checked' : ''; ?>>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center">
@@ -726,87 +724,26 @@
         <input type="hidden" name="attendance_data" id="attendanceData">
     </form>
 
-    <!-- Custom CSS for QR Scanner Animations -->
-    <style>
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        .animate-pulse {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .qr-scan-success {
-            animation: successFlash 0.5s ease-in-out;
-        }
-
-        @keyframes successFlash {
-            0% { background-color: rgb(34, 197, 94); }
-            100% { background-color: rgb(240, 253, 244); }
-        }
-
-        /* QR Reader styling */
-        #qrReader {
-            border: 2px dashed #d1d5db;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 10;
-        }
-
-        #qrReader.scanning {
-            border-color: #10b981;
-            background-color: #f0fdf4;
-        }
-
-        /* QR Scanner Section */
-        #qrScannerSection {
-            position: relative;
-            z-index: 20;
-        }
-
-        /* Ensure main content doesn't overlap with sidebar */
-        #main-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Recent scans scroll styling */
-        #recentScans::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        #recentScans::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 2px;
-        }
-
-        #recentScans::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 2px;
-        }
-
-        #recentScans::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
-        /* Keyboard shortcut styling */
-        kbd {
-            font-family: monospace;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-    </style>
-
     <!-- Scripts -->
-        <!-- QR Code Scanner Library - Local Production Version -->
-    <script src="/assets/js/html5-qrcode.min.js" type="text/javascript"></script>
+    <script src="/node_modules/html5-qrcode/html5-qrcode.min.js" type="text/javascript"></script>
     <script>
+        // Admin settings
+        const defaultFineAmount =                                  <?php echo $defaultFineAmount; ?>;
+
         let qrCodeScanner = null;
+
+        // Track users that have already been scanned for this event
+        const recentlyScanned = new Set(); // Set of userIds that have been scanned
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateProgress();
+
+            // Initialize the set of already scanned users from existing table data
+            initializeScannedUsers();
+
+            // Debug: Check if QR library is loaded
+            console.log('QR Library check:', typeof Html5QrcodeScanner !== 'undefined' ? 'Loaded' : 'NOT LOADED');
 
             // Add keyboard shortcuts
             document.addEventListener('keydown', function(event) {
@@ -827,7 +764,7 @@
                         case 'Q':
                             event.preventDefault();
                             const qrSection = document.getElementById('qrScannerSection');
-                            if (qrSection.classList.contains('hidden')) {
+                            if (qrSection && qrSection.classList.contains('hidden')) {
                                 toggleQRScanner();
                             }
                             break;
@@ -835,6 +772,23 @@
                 }
             });
         });
+
+        // Initialize the set of already scanned users from existing table data
+        function initializeScannedUsers() {
+            // Check all checked checkboxes and status selects to find already marked users
+            const checkedBoxes = document.querySelectorAll('.resident-checkbox:checked');
+            checkedBoxes.forEach(checkbox => {
+                const userId = checkbox.dataset.userId;
+                const statusSelect = document.querySelector(`.status-select[data-user-id="${userId}"]`);
+
+                // If user is checked and has a status, consider them already scanned
+                if (statusSelect && statusSelect.value) {
+                    recentlyScanned.add(parseInt(userId));
+                }
+            });
+
+            console.log('Initialized already scanned users:', Array.from(recentlyScanned));
+        }
 
         // Filter functionality
         function applyFilters() {
@@ -847,6 +801,9 @@
             if (eventFilter) params.append('event_id', eventFilter);
             if (cellFilter) params.append('cell', cellFilter);
             if (searchInput) params.append('search', searchInput);
+
+            // Clear scanned users when changing events (will be re-initialized on page load)
+            recentlyScanned.clear();
 
             // Reload page with filters
             window.location.href = 'attendance-marking.php?' + params.toString();
@@ -951,9 +908,9 @@
 
                 // Set default fine based on status
                 if (selectElement.value === 'late' && !fineInput.value) {
-                    fineInput.value = '500'; // Default late fine
+                    fineInput.value = Math.round(defaultFineAmount * 0.5); // Half amount for late
                 } else if (selectElement.value === 'absent' && !fineInput.value) {
-                    fineInput.value = '1000'; // Default absence fine
+                    fineInput.value = defaultFineAmount; // Full amount for absence
                 } else if (selectElement.value === 'present' && !fineInput.value) {
                     fineInput.value = '0';
                 }
@@ -968,7 +925,18 @@
         // QR Scanner functionality
         function toggleQRScanner() {
             const qrSection = document.getElementById('qrScannerSection');
-            qrSection.classList.toggle('hidden');
+
+            if (!qrSection) {
+                console.error('QR Scanner section not found!');
+                alert('Error: QR Scanner section not found. Please refresh the page.');
+                return;
+            }
+
+            if (qrSection.classList.contains('hidden')) {
+                qrSection.classList.remove('hidden');
+            } else {
+                qrSection.classList.add('hidden');
+            }
         }
 
         function startQRScanner() {
@@ -987,75 +955,43 @@
             startBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Starting...';
             startBtn.disabled = true;
 
-            // Check for camera permissions and support
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showScanMessage('❌ Camera not supported on this device', 'error');
+            try {
+                // Stop any existing scanner
+                if (qrCodeScanner) {
+                    qrCodeScanner.clear();
+                }
+
+                // Clear the reader element first
+                qrReader.innerHTML = '';
+
+                // Initialize scanner using the simple approach from reference
+                qrCodeScanner = new Html5QrcodeScanner('qrReader', {
+                    qrbox: {
+                        width: 250,
+                        height: 250,
+                    },
+                    fps: 20,
+                    rememberLastUsedCamera: true
+                });
+
+                // Start scanning with success/error handlers
+                qrCodeScanner.render(onScanSuccess, onScanError);
+
+                // Update UI
+                startBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Scanner Active';
+                stopBtn.disabled = false;
+                stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
+
+                showScanMessage('📷 Scanner started! Point camera at resident QR codes', 'success');
+
+            } catch (error) {
+                console.error('QR Scanner Error:', error);
+                showScanMessage('❌ Failed to start scanner: ' + error.message, 'error');
+
+                // Reset buttons
                 startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
                 startBtn.disabled = false;
-                return;
             }
-
-            // Test camera permissions first
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    // Stop the test stream immediately
-                    stream.getTracks().forEach(track => track.stop());
-
-                    // Now start the actual QR scanner
-                    try {
-                        if (qrCodeScanner) {
-                            qrCodeScanner.stop().catch(() => {});
-                        }
-
-                        qrCodeScanner = new Html5QrcodeScanner("qrReader", {
-                            fps: 10,
-                            qrbox: {width: 250, height: 250},
-                            aspectRatio: 1.0,
-                            disableFlip: false,
-                            verbose: false,
-                            showTorchButtonIfSupported: true,
-                            showZoomSliderIfSupported: true
-                        });
-
-                        qrCodeScanner.render(onScanSuccess, onScanFailure);
-
-                        // Update UI
-                        qrReader.classList.add('scanning');
-                        startBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Scanner Active';
-                        stopBtn.disabled = false;
-                        stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
-
-                        showScanMessage('📷 Scanner ready! Point camera at resident QR codes', 'success');
-
-                    } catch (error) {
-                        console.error('QR Scanner Error:', error);
-                        showScanMessage('❌ Failed to initialize QR scanner: ' + error.message, 'error');
-
-                        // Reset buttons
-                        startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
-                        startBtn.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Camera permission error:', error);
-
-                    let errorMessage = '❌ Camera access denied. ';
-                    if (error.name === 'NotAllowedError') {
-                        errorMessage += 'Please allow camera access in your browser settings and try again.';
-                    } else if (error.name === 'NotFoundError') {
-                        errorMessage += 'No camera found on this device.';
-                    } else if (error.name === 'NotReadableError') {
-                        errorMessage += 'Camera is already in use by another application.';
-                    } else {
-                        errorMessage += 'Please check your camera and permissions.';
-                    }
-
-                    showScanMessage(errorMessage, 'error');
-
-                    // Reset buttons
-                    startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
-                    startBtn.disabled = false;
-                });
         }
 
         function stopQRScanner() {
@@ -1066,38 +1002,40 @@
             stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Stopping...';
             stopBtn.disabled = true;
 
-            if (qrCodeScanner) {
-                qrCodeScanner.stop().then(() => {
+            try {
+                if (qrCodeScanner) {
                     qrCodeScanner.clear();
+                    qrCodeScanner = null;
+                }
 
-                    // Reset UI
-                    qrReader.classList.remove('scanning');
-                    qrReader.innerHTML = `
-                        <div class="text-center">
-                            <i class="fas fa-qrcode text-4xl text-gray-400 mb-2"></i>
-                            <p class="text-gray-600">Click "Start Scanner" to begin</p>
-                            <p class="text-xs text-gray-500 mt-2">Ensure good lighting for best results</p>
-                        </div>
-                    `;
+                // Clear the reader element
+                qrReader.innerHTML = '<div class="text-center p-8 text-gray-500"><i class="fas fa-qrcode text-4xl mb-2"></i><p>Scanner stopped</p></div>';
 
-                    startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
-                    startBtn.disabled = false;
-                    stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
+                // Reset UI
+                startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
+                startBtn.disabled = false;
+                stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
+                stopBtn.disabled = true;
 
-                    showScanMessage('📷 Scanner stopped', 'info');
-                }).catch(error => {
-                    console.error('Error stopping scanner:', error);
+                showScanMessage('📷 Scanner stopped', 'info');
 
-                    // Force reset
-                    startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
-                    startBtn.disabled = false;
-                    stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
-                    stopBtn.disabled = true;
-                });
+            } catch (error) {
+                console.error('Error stopping scanner:', error);
+
+                // Force reset
+                startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Start Scanner';
+                startBtn.disabled = false;
+                stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Scanner';
+                stopBtn.disabled = true;
             }
         }
 
         function onScanSuccess(decodedText, decodedResult) {
+            console.log('QR Code scanned:', decodedText);
+
+            // Display the scanned result immediately
+            showScanMessage(`✅ QR Code detected: ${decodedText}`, 'success');
+
             let userId, userName;
 
             try {
@@ -1106,25 +1044,29 @@
 
                 if (qrData.type === 'umuganda_resident' && qrData.id) {
                     userId = qrData.id;
-                    userName = qrData.name;
-
-                    // Show scan feedback with resident info
+                    userName = qrData.name || `User ${qrData.id}`;
+                    showScanMessage(`📱 Scanned: ${userName} (ID: ${userId})`, 'info');
+                } else if (qrData.id) {
+                    // Handle JSON without type field (fallback)
+                    userId = qrData.id;
+                    userName = qrData.name || `User ${qrData.id}`;
                     showScanMessage(`📱 Scanned: ${userName} (ID: ${userId})`, 'info');
                 } else {
-                    showScanMessage('Invalid QR code: Not a resident QR code', 'error');
+                    showScanMessage('Invalid QR code: Missing user ID', 'error');
                     return;
                 }
             } catch (e) {
                 // Fallback: treat as plain user ID (old format)
                 const plainUserId = decodedText.trim();
 
-                if (!/^\d+$/.test(plainUserId)) {
-                    showScanMessage('Invalid QR code format. Please scan a resident QR code.', 'error');
+                if (/^\d+$/.test(plainUserId)) {
+                    userId = plainUserId;
+                    userName = `User ${userId}`;
+                    showScanMessage(`📱 Scanned User ID: ${userId}`, 'info');
+                } else {
+                    showScanMessage('Invalid QR code format. Expected JSON with resident data or numeric user ID.', 'error');
                     return;
                 }
-
-                userId = plainUserId;
-                userName = null; // Will be fetched from API
             }
 
             // Check if we have a selected event
@@ -1136,80 +1078,171 @@
                 return;
             }
 
-            // Immediate UI feedback
-            showScanMessage(`⏳ Marking attendance for ${userName || `User ${userId}`}...`, 'info');
+            // Check if user has already been marked for this event
+            const userRow = document.querySelector(`tr[data-user-id="${userId}"]`);
+            if (userRow) {
+                const checkbox = userRow.querySelector('input[type="checkbox"]');
+                const statusSelect = userRow.querySelector('select');
 
-            // Find and mark the resident in the UI
-            const checkbox = document.querySelector(`.resident-checkbox[data-user-id="${userId}"]`);
-            if (checkbox) {
-                // Mark in UI first for immediate feedback
-                checkbox.checked = true;
-                const statusSelect = document.querySelector(`.status-select[data-user-id="${userId}"]`);
-                if (statusSelect) {
-                    statusSelect.value = 'present';
-                    updateAttendanceRecord(statusSelect);
+                if (checkbox && checkbox.checked && statusSelect && statusSelect.value) {
+                    showScanMessage(`⚠️ ${userName} has already been marked as ${statusSelect.value} for this event`, 'info');
+                    return;
                 }
             }
 
-            // Save to database via API
-            markAttendanceViaAPI(userId, selectedEventId, 'present', userName)
-                .then(response => {
-                    if (response.success) {
-                        const finalUserName = response.data.user_name || userName || `User ${userId}`;
-                        addToRecentScans(userId, finalUserName);
-                        showScanMessage(`✅ ${finalUserName} marked present successfully!`, 'success');
+            // Check if user was already scanned in this session
+            if (recentlyScanned.has(userId)) {
+                showScanMessage(`⚠️ ${userName} has already been scanned for this event`, 'info');
+                return;
+            }
 
-                        // Update progress counter
-                        updateProgress();
+            // Record this scan to prevent duplicates in this session
+            recentlyScanned.add(userId);
 
-                        // Play success sound (optional)
-                        playSuccessSound();
-                    } else {
-                        showScanMessage(`❌ Error: ${response.message}`, 'error');
+            // Mark attendance
+            markAttendanceViaAPI(userId, selectedEventId, 'present', userName);
 
-                        // Uncheck if marking failed
-                        if (checkbox) {
-                            checkbox.checked = false;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('API Error:', error);
-                    showScanMessage('❌ Failed to save attendance. Please try again.', 'error');
+            // Add to recent scans
+            addToRecentScans(userId, userName);
+        }
 
-                    // Uncheck if marking failed
-                    if (checkbox) {
-                        checkbox.checked = false;
-                    }
-                });
+        function onScanError(error) {
+            // Don't spam console with "no QR code found" errors
+            if (!error.includes('NotFoundException')) {
+                console.warn('QR Scan error:', error);
+            }
         }
 
         // API function to mark attendance
         async function markAttendanceViaAPI(userId, eventId, status, userName = null) {
-            const response = await fetch('../api/qr-attendance.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            try {
+                showScanMessage(`⏳ Marking attendance for ${userName}...`, 'info');
+
+                // Create proper time format (HH:mm:ss)
+                const now = new Date();
+                const timeString = now.toTimeString().split(' ')[0]; // Gets HH:mm:ss format
+
+                const requestData = {
                     user_id: parseInt(userId),
                     event_id: parseInt(eventId),
                     status: status,
-                    check_in_time: new Date().toTimeString().slice(0, 8),
-                    notes: 'Marked via QR code scan',
-                    user_name: userName // Pass along the user name if available
-                })
-            });
+                    check_in_time: timeString,
+                    notes: 'Marked via QR code scan'
+                };
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                console.log('Sending request data:', requestData);
+
+                // Try multiple API paths in order of preference
+                const apiPaths = [
+                    '/api/qr-attendance',
+                    '../../api/qr-attendance.php',
+                    '/public/api/qr-attendance.php',
+                    '../../../api/qr-attendance.php'
+                ];
+
+                let response = null;
+                let workingPath = null;
+
+                for (const path of apiPaths) {
+                    try {
+                        console.log(`Trying API path: ${path}`);
+                        response = await fetch(path, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(requestData)
+                        });
+
+                        if (response.ok) {
+                            workingPath = path;
+                            console.log(`Success with path: ${path}`);
+                            break;
+                        } else {
+                            console.log(`Path ${path} failed with status: ${response.status}`);
+                        }
+                    } catch (error) {
+                        console.log(`Path ${path} failed with error: ${error.message}`);
+                        continue;
+                    }
+                }
+
+                if (!response || !response.ok) {
+                    throw new Error(`All API paths failed. Last status: ${response ? response.status : 'No response'}`);
+                }
+
+                console.log('Response status:', response.status);
+                console.log('Working API path:', workingPath);
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    showScanMessage(`✅ ${userName} marked as present!`, 'success');
+
+                    // Update the UI if the user is visible in the table
+                    const userRow = document.querySelector(`tr[data-user-id="${userId}"]`);
+                    if (userRow) {
+                        const checkbox = userRow.querySelector('input[type="checkbox"]');
+                        const statusSelect = userRow.querySelector('select');
+                        const timeInput = userRow.querySelector('input[type="time"]');
+
+                        if (checkbox) checkbox.checked = true;
+                        if (statusSelect) statusSelect.value = 'present';
+                        if (timeInput) timeInput.value = now.toTimeString().slice(0, 5); // HH:mm format
+                    }
+
+                    // Update progress bar
+                    updateProgress();
+
+                } else {
+                    throw new Error(data.message || 'Failed to mark attendance');
+                }
+
+            } catch (error) {
+                console.error('API Error:', error);
+                showScanMessage(`❌ Failed to mark attendance: ${error.message}`, 'error');
+            }
+        }        // Add to recent scans
+        function addToRecentScans(userId, userName) {
+            const recentScans = document.getElementById('recentScans');
+            const scanCount = document.getElementById('scanCounter');
+
+            // Remove "No scans yet" message
+            if (recentScans.querySelector('.text-center')) {
+                recentScans.innerHTML = '';
             }
 
-            return await response.json();
+            // Create scan entry
+            const scanEntry = document.createElement('div');
+            scanEntry.className = 'flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg mb-2';
+            scanEntry.setAttribute('data-user-id', userId);
+            scanEntry.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check text-white text-xs"></i>
+                    </div>
+                    <span class="text-sm font-medium text-green-700">${userName}</span>
+                    <span class="text-xs text-green-600">✅ Marked</span>
+                </div>
+                <span class="text-xs text-green-600">${new Date().toLocaleTimeString()}</span>
+            `;
+
+            // Add to top of list
+            recentScans.insertBefore(scanEntry, recentScans.firstChild);
+
+            // Keep only last 5 scans
+            while (recentScans.children.length > 5) {
+                recentScans.removeChild(recentScans.lastChild);
+            }
+
+            // Update count
+            const currentCount = parseInt(scanCount.textContent.split(' ')[0]) || 0;
+            scanCount.textContent = `${currentCount + 1} scanned`;
         }
 
-        // Show scan message with different types
-        function showScanMessage(message, type) {
+        // Show scan message
+        function showScanMessage(message, type = 'info') {
             const messageDiv = document.getElementById('scanMessage');
             if (messageDiv) {
                 messageDiv.textContent = message;
@@ -1229,7 +1262,7 @@
                         className += 'bg-gray-100 text-gray-800 border-gray-200';
                 }
 
-                messageDiv.className = className;
+                messageDiv.className = className + ' block';
 
                 // Auto-hide after 5 seconds for success/info, 7 seconds for errors
                 const hideDelay = type === 'error' ? 7000 : 5000;
@@ -1238,95 +1271,6 @@
                     messageDiv.className = 'hidden';
                 }, hideDelay);
             }
-        }
-
-        // Play success sound for successful scans
-        function playSuccessSound() {
-            try {
-                // Create a simple beep sound
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.value = 800; // High pitch beep
-                oscillator.type = 'sine';
-
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.2);
-            } catch (e) {
-                // Silently ignore if audio context is not supported
-                console.log('Audio feedback not available');
-            }
-        }
-
-        function onScanFailure(error) {
-            // Handle scan failure silently
-        }
-
-        function addToRecentScans(userId, userName) {
-            const recentScans = document.getElementById('recentScans');
-            const scanCounter = document.getElementById('scanCounter');
-
-            // Use provided userName or try to get from DOM
-            let name = userName;
-            if (!name) {
-                const residentRow = document.querySelector(`.resident-row[data-user-id="${userId}"]`);
-                if (residentRow) {
-                    name = residentRow.querySelector('.text-sm.font-medium').textContent;
-                } else {
-                    name = `User ID: ${userId}`;
-                }
-            }
-
-            const time = new Date().toLocaleTimeString();
-
-            const scanItem = document.createElement('div');
-            scanItem.className = 'flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg mb-2 animate-pulse';
-            scanItem.innerHTML = `
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mr-3">
-                        <i class="fas fa-check text-white text-xs"></i>
-                    </div>
-                    <div>
-                        <div class="text-sm font-medium text-green-900">${name}</div>
-                        <div class="text-xs text-green-600">Scanned at ${time}</div>
-                    </div>
-                </div>
-                <div class="text-green-600">
-                    <i class="fas fa-qrcode"></i>
-                </div>
-            `;
-
-            // Remove "No scans yet" message if it exists
-            const noScansMessage = recentScans.querySelector('.text-center');
-            if (noScansMessage) {
-                recentScans.innerHTML = '';
-            }
-
-            recentScans.insertBefore(scanItem, recentScans.firstChild);
-
-            // Keep only last 5 scans
-            while (recentScans.children.length > 5) {
-                recentScans.removeChild(recentScans.lastChild);
-            }
-
-            // Update scan counter
-            const currentCount = recentScans.children.length;
-            if (scanCounter) {
-                scanCounter.textContent = `${currentCount} scanned`;
-            }
-
-            // Remove animation after 2 seconds
-            setTimeout(() => {
-                scanItem.classList.remove('animate-pulse');
-                scanItem.classList.add('bg-green-100');
-            }, 2000);
         }
 
         // Save all attendance
@@ -1362,12 +1306,17 @@
                     return;
                 }
 
+                const currentTime = new Date();
+                const timeString = currentTime.getHours().toString().padStart(2, '0') + ':' +
+                                  currentTime.getMinutes().toString().padStart(2, '0') + ':' +
+                                  currentTime.getSeconds().toString().padStart(2, '0');
+
                 attendanceData.push({
                     user_id: userId,
                     status: statusSelect.value,
-                    check_in_time: timeInput.value || null,
+                    check_in_time: (timeInput.value && timeInput.value.trim()) ? timeInput.value : timeString,
                     fine_amount: fineInput.value || 0,
-                    notes: notesInput.value || '',
+                    notes: (notesInput.value ? notesInput.value + ' | ' : '') + 'Manual entry via attendance marking',
                     excuse_reason: excuseInput.value || ''
                 });
             });
@@ -1379,62 +1328,7 @@
                 }
             }
         }
-
-        // Real-time search (if needed for client-side filtering)
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            // Optional: Add client-side search filtering here
-        });
-
-        // Keyboard shortcuts for QR scanner
-        document.addEventListener('keydown', function(e) {
-            // Space bar to toggle QR scanner
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                const qrSection = document.getElementById('qrScannerSection');
-                if (qrSection.classList.contains('hidden')) {
-                    toggleQRScanner();
-                    setTimeout(() => startQRScanner(), 500);
-                } else {
-                    if (qrCodeScanner) {
-                        stopQRScanner();
-                    } else {
-                        startQRScanner();
-                    }
-                }
-            }
-
-            // Escape to stop scanner
-            if (e.code === 'Escape' && qrCodeScanner) {
-                stopQRScanner();
-            }
-        });
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Update initial progress
-            updateProgress();
-
-            // Show helpful tip if QR scanner is available
-            const hasCamera = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
-            if (hasCamera) {
-                console.log('📱 QR Scanner ready! Press SPACE to quick-start scanning.');
-            }
-
-            // Auto-open QR scanner if event is pre-selected and no residents are marked yet
-            const eventFilter = document.getElementById('eventFilter');
-            const checkedBoxes = document.querySelectorAll('.resident-checkbox:checked');
-
-            if (eventFilter && eventFilter.value && checkedBoxes.length === 0) {
-                // Auto-show QR scanner after 2 seconds for better UX
-                setTimeout(() => {
-                    const qrSection = document.getElementById('qrScannerSection');
-                    if (qrSection && qrSection.classList.contains('hidden')) {
-                        showScanMessage('💡 Tip: Use the QR scanner for fast attendance marking!', 'info');
-                    }
-                }, 2000);
-            }
-        });
     </script>
 
-<!-- Footer -->
-<?php include __DIR__ . '/partials/footer.php'; ?>
+    <!-- Footer -->
+    <?php include __DIR__ . '/partials/footer.php'; ?>

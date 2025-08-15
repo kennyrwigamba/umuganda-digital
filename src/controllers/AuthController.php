@@ -5,7 +5,10 @@
  */
 
 require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../channels/EmailChannel.php';
 require_once __DIR__ . '/../helpers/functions.php';
+
+use UmugandaDigital\Channels\EmailChannel;
 
 class AuthController
 {
@@ -160,13 +163,15 @@ class AuthController
             $data['role']   = 'resident';
             $data['status'] = 'active';
 
-            // Set default location values (can be updated later in profile)
-            $data['cell']          = 'Not Set';
-            $data['sector']        = 'Not Set';
-            $data['district']      = 'Not Set';
-            $data['province']      = 'Not Set';
+            // Handle location data - use provided values or set to null
+            $data['province_id'] = ! empty($data['province_id']) ? intval($data['province_id']) : null;
+            $data['district_id'] = ! empty($data['district_id']) ? intval($data['district_id']) : null;
+            $data['sector_id']   = ! empty($data['sector_id']) ? intval($data['sector_id']) : null;
+            $data['cell_id']     = ! empty($data['cell_id']) ? intval($data['cell_id']) : null;
+
+                                                   // Set default values for other fields
             $data['date_of_birth'] = '1990-01-01'; // Default birth date - user can update later
-            $data['gender']        = 'Not Set';
+            $data['gender']        = 'male';       // Default gender since enum doesn't allow null
             $data['created_at']    = date('Y-m-d H:i:s');
 
             // Create user
@@ -178,6 +183,75 @@ class AuthController
 
             // Log registration
             logActivity("New resident registered: {$data['email']} (ID: $user_id)", 'info');
+
+            // Create user notification preferences (defaults to all enabled)
+            try {
+                global $db;
+                $connection = $db->getConnection();
+                
+                // Create default notification preferences for user
+                $stmt = $connection->prepare(
+                    "INSERT INTO user_notification_preferences (user_id) VALUES (?)"
+                );
+                $stmt->bind_param('i', $user_id);
+                $stmt->execute();
+                $stmt->close();
+            } catch (Exception $e) {
+                logActivity("Failed to create notification preferences for user $user_id: " . $e->getMessage(), 'warning');
+            }
+
+            // Send welcome notification (simplified approach)
+            try {
+                global $db;
+                $connection = $db->getConnection();
+                $userName = $data['first_name'] . ' ' . $data['last_name'];
+                
+                // Create notification record
+                $stmt = $connection->prepare(
+                    "INSERT INTO notifications (user_id, title, body, type, category, priority, status, data, created_at) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+                );
+                
+                $title = 'Welcome to Umuganda Digital Platform';
+                $body = "Welcome $userName! Thank you for joining our community. Your account has been successfully created and you can now participate in Umuganda activities.";
+                $type = 'user_registered';
+                $category = 'system';
+                $priority = 'normal';
+                $status = 'pending';
+                $notificationData = json_encode([
+                    'user_name' => $userName,
+                    'user_email' => $data['email'],
+                    'platform_name' => 'Umuganda Digital Platform',
+                    'platform_url' => 'https://umuganda.local',
+                ]);
+                
+                $stmt->bind_param('isssssss', $user_id, $title, $body, $type, $category, $priority, $status, $notificationData);
+                
+                if ($stmt->execute()) {
+                    $notificationId = $connection->insert_id;
+                    
+                    // Create channel records for email and in-app
+                    $channels = ['inapp', 'email'];
+                    foreach ($channels as $channel) {
+                        $channelStmt = $connection->prepare(
+                            "INSERT INTO notification_channels (notification_id, channel, status, created_at) 
+                             VALUES (?, ?, 'pending', NOW())"
+                        );
+                        $channelStmt->bind_param('is', $notificationId, $channel);
+                        $channelStmt->execute();
+                        $channelStmt->close();
+                    }
+                    
+                    logActivity("Welcome notification created for user: {$data['email']} (Notification ID: $notificationId)", 'info');
+                } else {
+                    logActivity("Failed to create welcome notification for {$data['email']}: " . $connection->error, 'warning');
+                }
+                $stmt->close();
+                
+            } catch (Exception $notificationError) {
+                // Don't fail registration if notification fails
+                logActivity("Failed to create welcome notification for {$data['email']}: " . $notificationError->getMessage(), 'warning');
+            }
 
             // Return success response
             successResponse([
